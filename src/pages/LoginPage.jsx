@@ -20,7 +20,7 @@ function LoginPage() {
       <div className="flex flex-1 items-center justify-center px-8">
         <div className="w-full max-w-md bg-white p-10 rounded-2xl shadow-md">
           <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">
-            Librarian Login
+            Admin Login
           </h2>
           <hr />
 
