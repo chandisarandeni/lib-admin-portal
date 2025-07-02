@@ -125,7 +125,7 @@ const Main = () => {
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-semibold text-gray-800">
-              Hello, <span className="text-red-500">Arafat!</span>
+              Hello, <span className="text-[#8E552C]">Arafat!</span>
             </h1>
             <p className="text-gray-500 text-sm mt-1">Jan 12, 2023 | Thursday, 11:00 AM</p>
           </div>
@@ -147,7 +147,7 @@ const Main = () => {
                 <p className="text-gray-500 text-sm mt-1">{stat.title}</p>
               </div>
               <div>
-                <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                <span className="bg-[#8E552C] text-white px-2 py-1 rounded-full text-xs font-semibold">
                   {stat.trend}
                 </span>
               </div>
@@ -162,7 +162,7 @@ const Main = () => {
             <div className="flex justify-between items-center p-5 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-800">Users List</h3>
               <div className="flex gap-2">
-                <button onClick={() => {navigate('/dashboard/add-user')}} className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600 transition-colors">
+                <button onClick={() => {navigate('/dashboard/add-user')}} className="bg-[#B67242] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#8E552C] transition-colors">
                   Add New User
                 </button>
                 <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200 transition-colors">
@@ -220,7 +220,7 @@ const Main = () => {
             <div className="flex justify-between items-center p-5 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-800">Books List</h3>
               <div className="flex gap-2">
-                <button onClick={() => {navigate('/dashboard/add-books')}} className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600 transition-colors">
+                <button onClick={() => {navigate('/dashboard/add-books')}} className="bg-[#B67242] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#8E552C] transition-colors">
                   Add New Book
                 </button>
                 <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200 transition-colors">
