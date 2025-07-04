@@ -1,12 +1,22 @@
-import React, { useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import EditBookModal from '../components/EditBookModal'
 import EditUserModal from '../components/EditUserModal'
+import { AppContext } from '../context/AppContext'
 
 
 const Main = () => {
 
   const navigate = useNavigate()
+  const {fetchPopularBooks} = useContext(AppContext)
+  const [topChoices, setTopChoices] = useState([])
+
+  useEffect(() => {
+    fetchPopularBooks()
+      .then(data => {
+        setTopChoices(data)
+      })
+  }, [fetchPopularBooks])
 
   const statsData = [
     { title: 'Total Visitors', value: '1223', trend: '+12', color: 'red' },
@@ -29,14 +39,7 @@ const Main = () => {
     { id: 4, title: 'HTML Basics', author: 'Alice Brown', isbn: 'ISBN-004', status: 'Overdue' }
   ]
 
-  const topChoices = [
-    { title: 'The Critique of Pure Reason', author: 'Immanuel Kant', image: '/api/placeholder/120/160' },
-    { title: 'Dune', author: 'Frank Herbert', image: '/api/placeholder/120/160' },
-    { title: 'The Design of Everyday Things', author: 'Don Norman', image: '/api/placeholder/120/160' },
-    { title: 'Lean UX', author: 'Jeff Gothelf', image: '/api/placeholder/120/160' },
-    { title: 'The Republic', author: 'Plato', image: '/api/placeholder/120/160' },
-    { title: 'Ancestral Trouble', author: 'Maud Newton', image: '/api/placeholder/120/160' }
-  ]
+  
 
   const overdueBooks = [
     { id: 1, user: 'John Doe', book: 'React Guide', dueDate: '2023-06-15', fine: '$5.00' },
@@ -223,7 +226,7 @@ const Main = () => {
                 <button onClick={() => {navigate('/dashboard/add-books')}} className="bg-[#B67242] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#8E552C] transition-colors">
                   Add New Book
                 </button>
-                <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200 transition-colors">
+                <button onClick={() => {navigate('/dashboard/all-books')}} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200 transition-colors">
                   View All
                 </button>
               </div>
@@ -278,12 +281,12 @@ const Main = () => {
         <div className="bg-white rounded-xl shadow-sm p-5 mb-8">
           <h3 className="text-lg font-semibold text-gray-800 mb-5">Top Choices</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
-            {topChoices.map((book, index) => (
+            {topChoices.slice(0, 6).map((book, index) => (
               <div key={index} className="text-center">
                 <div className="w-24 h-32 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-white font-bold text-xs overflow-hidden">
-                  <img src={book.image} alt={book.title} className="w-full h-full object-cover rounded-lg" />
+                  <img src={book.imageUrl} alt={book.bookName} className="w-full h-full object-cover rounded-lg" />
                 </div>
-                <h4 className="text-sm font-semibold text-gray-800 mb-1 line-clamp-2">{book.title}</h4>
+                <h4 className="text-sm font-semibold text-gray-800 mb-1 line-clamp-2">{book.bookName}</h4>
                 <p className="text-xs text-gray-500">{book.author}</p>
               </div>
             ))}
