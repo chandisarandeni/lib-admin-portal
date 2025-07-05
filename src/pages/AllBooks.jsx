@@ -11,19 +11,19 @@ const AllBooks = () => {
   const [search, setSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const booksPerPage = 15
-  const { books, fetchPopularBooks } = useContext(AppContext)
+  const { allBooks, fetchAllBooks } = useContext(AppContext)
 
-  // Fetch books when component mounts
+  // Fetch all books when component mounts
   useEffect(() => {
-    fetchPopularBooks()
-  }, [fetchPopularBooks])
+    fetchAllBooks()
+  }, [fetchAllBooks])
 
   // Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedBook, setSelectedBook] = useState(null)
 
   // Filter books by title, author, or category
-  const filteredBooks = books.filter(
+  const filteredBooks = allBooks.filter(
     book =>
       book.bookName?.toLowerCase().includes(search.toLowerCase()) ||
       book.author?.toLowerCase().includes(search.toLowerCase()) ||

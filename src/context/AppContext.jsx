@@ -6,6 +6,7 @@ export const AppContext = createContext()
 const ContextProvider = ({ children }) => {
 
     const[books, setBooks] = useState([])
+    const[allBooks, setAllBooks] = useState([]) // For showing all books including duplicates
     const [selectedGenre, setSelectedGenre] = useState("");
     const [selectedType, setSelectedType] = useState("");
     
@@ -24,6 +25,22 @@ const ContextProvider = ({ children }) => {
             return uniqueBooks;
         } catch (error) {
             console.error("Error fetching popular books:", error);
+            return [];
+        }
+    }
+
+    const fetchAllBooks = async () => {
+        try {
+            const url = "http://localhost:8080/api/v1/books";
+            const response = await axios.get(url);
+            
+            // Don't remove duplicates - show all books
+            setAllBooks(response.data);
+            console.log("All books (including duplicates):", response.data);
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching all books:", error);
+            setAllBooks([]);
             return [];
         }
     }
@@ -75,7 +92,7 @@ const ContextProvider = ({ children }) => {
 }, [selectedGenre, selectedType]);
     
     return (
-        <AppContext.Provider value={{ fetchPopularBooks, books }}>
+        <AppContext.Provider value={{ fetchPopularBooks, fetchAllBooks, books, allBooks }}>
             {children}
         </AppContext.Provider>
     )
