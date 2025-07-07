@@ -3,30 +3,72 @@ import React from 'react'
 const BookDetails = ({ isOpen, onClose, book }) => {
   if (!isOpen || !book) return null
 
+
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
+    if (!dateString) return 'Not available'
+    console.log('Formatting date:', dateString)
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) {
+        console.log('Invalid date detected:', dateString)
+        return 'Invalid date'
+      }
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    } catch {
+      return 'Invalid date'
+    }
   }
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'Active':
+      case 'active':
+      case 'ACTIVE':
         return 'bg-green-100 text-green-800'
       case 'Overdue':
+      case 'overdue':
+      case 'OVERDUE':
         return 'bg-red-100 text-red-800'
+      case 'Returned':
+      case 'returned':
+      case 'RETURNED':
+        return 'bg-blue-100 text-blue-800'
+      case 'Lost':
+      case 'lost':
+      case 'LOST':
+        return 'bg-yellow-100 text-yellow-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
   }
 
   const getDaysRemaining = (dueDate) => {
+    if (!dueDate) {
+      console.log('No due date provided')
+      return null
+    }
+    
+    console.log('Raw due date:', dueDate)
+    
     const today = new Date()
+    today.setHours(0, 0, 0, 0) // Reset time to start of day
+    
     const due = new Date(dueDate)
+    due.setHours(0, 0, 0, 0) // Reset time to start of day
+    
+    console.log('Today (normalized):', today)
+    console.log('Due date (normalized):', due)
+    
     const diffTime = due - today
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    console.log('Difference in milliseconds:', diffTime)
+    console.log('Days remaining calculated:', diffDays)
+    
     return diffDays
   }
 
@@ -79,8 +121,8 @@ const BookDetails = ({ isOpen, onClose, book }) => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600">Status</label>
-                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(book.status)}`}>
-                      {book.status}
+                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(book.returnStatus)}`}>
+                      {book.returnStatus}
                     </span>
                   </div>
                 </div>
@@ -107,19 +149,23 @@ const BookDetails = ({ isOpen, onClose, book }) => {
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-600">Issue Date</label>
-                    <p className="text-gray-900">{formatDate(book.issueDate)}</p>
+                    <p className="text-gray-900">{formatDate(book.borrowingDate)}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600">Due Date</label>
-                    <p className="text-gray-900">{formatDate(book.dueDate)}</p>
+                    <p className="text-gray-900">{formatDate(book.returnDate)}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600">Days Remaining</label>
-                    <p className={`font-medium ${daysRemaining < 0 ? 'text-red-600' : daysRemaining <= 3 ? 'text-yellow-600' : 'text-green-600'}`}>
-                      {daysRemaining < 0 ? `${Math.abs(daysRemaining)} days overdue` : 
-                       daysRemaining === 0 ? 'Due today' : 
-                       `${daysRemaining} days remaining`}
-                    </p>
+                    {daysRemaining !== null ? (
+                      <p className={`font-medium ${daysRemaining < 0 ? 'text-red-600' : daysRemaining <= 3 ? 'text-yellow-600' : 'text-green-600'}`}>
+                        {daysRemaining < 0 ? `${Math.abs(daysRemaining)} days overdue` : 
+                         daysRemaining === 0 ? 'Due today' : 
+                         `${daysRemaining} days remaining`}
+                      </p>
+                    ) : (
+                      <p className="text-gray-500">No due date available</p>
+                    )}
                   </div>
                 </div>
               </div>

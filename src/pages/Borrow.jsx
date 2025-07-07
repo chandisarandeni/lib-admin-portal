@@ -61,23 +61,36 @@ const Borrow = () => {
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedIssuedBooks = filteredIssuedBooks.slice(startIndex, startIndex + itemsPerPage)
 
-  // Get recently borrowed books (last 7 days) - increased to show more items
+  // Get recently borrowed books (last 7 days) - show newly borrowed books
   const allRecentlyBorrowed = issuedBooks
     .filter(book => {
-      const issueDate = new Date(book.issueDate)
+      // Use borrowingDate (which is the issue date in your main table)
+      const issueDate = new Date(book.borrowingDate)
       const today = new Date()
       const diffTime = Math.abs(today - issueDate)
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      return diffDays <= 7
+      return diffDays <= 7 // Books issued in last 7 days
     })
+    .sort((a, b) => new Date(b.borrowingDate) - new Date(a.borrowingDate)) // Sort by most recent first
 
   // Pagination for recently borrowed
   const recentTotalPages = Math.ceil(allRecentlyBorrowed.length / itemsPerPage)
   const recentStartIndex = (recentPage - 1) * itemsPerPage
   const recentlyBorrowed = allRecentlyBorrowed.slice(recentStartIndex, recentStartIndex + itemsPerPage)
 
-  // Get all overdue books
-  const allOverdueBooks = issuedBooks.filter(book => book.status === "Overdue")
+  // Get all overdue books - books that are not returned and past due date
+  const allOverdueBooks = issuedBooks.filter(book => {
+    // Check if book is still borrowed (not returned)
+    const isNotReturned = book.returnStatus !== "Returned" && book.returnStatus !== "returned"
+    
+    // Check if due date has passed
+    const today = new Date()
+    today.setHours(23, 59, 59, 999) // Set to end of today
+    const dueDate = new Date(book.returnDate)
+    const isPastDue = dueDate < today
+    
+    return isNotReturned && isPastDue
+  })
 
   // Pagination for overdue books
   const overdueTotalPages = Math.ceil(allOverdueBooks.length / itemsPerPage)
@@ -100,7 +113,13 @@ const Borrow = () => {
   }
 
   const handleViewDetails = (book) => {
-    setSelectedBook(book)
+    // Get book details from the catalog and merge with issued book data
+    const bookDetails = getBookDetails(book.bookId)
+    const enhancedBook = {
+      ...book,
+      ...bookDetails
+    }
+    setSelectedBook(enhancedBook)
     setIsModalOpen(true)
   }
 
@@ -239,8 +258,8 @@ const Borrow = () => {
                   <td className="px-6 py-4 text-sm text-gray-900">{formatDate(book.borrowingDate)}</td>
                   <td className="px-6 py-4 text-sm text-gray-900">{formatDate(book.returnDate)}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(book.status)}`}>
-                      {book.status}
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(book.returnStatus)}`}>
+                      {book.returnStatus}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm">
@@ -299,7 +318,7 @@ const Borrow = () => {
                       <div className="text-xs text-gray-500">{bookDetails.author}</div>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">{book.borrowerName}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{formatDate(book.issueDate)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900">{formatDate(book.borrowingDate)}</td>
                   </tr>
                   )
                 })}
@@ -342,7 +361,7 @@ const Borrow = () => {
                       <div className="text-xs text-gray-500">{bookDetails.author}</div>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">{book.borrowerName}</td>
-                    <td className="px-4 py-3 text-sm text-red-600 font-medium">{formatDate(book.dueDate)}</td>
+                    <td className="px-4 py-3 text-sm text-red-600 font-medium">{formatDate(book.returnDate)}</td>
                   </tr>
                   )
                 })}
