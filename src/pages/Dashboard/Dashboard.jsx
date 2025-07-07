@@ -15,6 +15,7 @@ import OverdueBooks from '../OverdueBooks'
 import EditUserModal from "../../components/EditUserModal";
 import Profile from "../Profile";
 import { assets } from "../../assets/assests";
+import Borrow from "../Borrow";
 
 
 const Dashboard = () => {
@@ -26,6 +27,7 @@ const Dashboard = () => {
     { name: "Users", path: "/dashboard/all-users", icon: <FaRegUser /> },
     { name: "Overdue Books", path: "/dashboard/overdue-books", icon: <FaRegCalendarTimes /> },
     { name: "profile", path: "/dashboard/profile", icon: <ImProfile /> },
+    {name: "Borrowed Books", path: "/dashboard/borrowed-books", icon: <RiBookShelfFill />},
   ];
 
   return (
@@ -92,6 +94,7 @@ const Dashboard = () => {
             <Route path="all-books" element={<AllBooks />} />
             <Route path="profile" element={<Profile />} />
             <Route path="overdue-books" element={<OverdueBooks />} />
+            <Route path="borrowed-books" element={<Borrow />} />
           </Routes>
         </div>
       </div>

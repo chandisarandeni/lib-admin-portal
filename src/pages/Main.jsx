@@ -8,7 +8,7 @@ import { AppContext } from '../context/AppContext'
 const Main = () => {
 
   const navigate = useNavigate()
-  const {fetchPopularBooks} = useContext(AppContext)
+  const {fetchPopularBooks, books} = useContext(AppContext)
   const [topChoices, setTopChoices] = useState([])
 
   useEffect(() => {
@@ -16,7 +16,7 @@ const Main = () => {
       .then(data => {
         setTopChoices(data)
       })
-  }, [fetchPopularBooks])
+  }, [])
 
   const statsData = [
     { title: 'Total Visitors', value: '1223', trend: '+12', color: 'red' },
@@ -32,12 +32,7 @@ const Main = () => {
     { id: 4, name: 'Sarah Wilson', books: 2, role: 'Staff', status: 'Active' }
   ]
 
-  const books = [
-    { id: 1, title: 'React Guide', author: 'John Smith', isbn: 'ISBN-001', status: 'Available' },
-    { id: 2, title: 'JavaScript Pro', author: 'Jane Doe', isbn: 'ISBN-002', status: 'Borrowed' },
-    { id: 3, title: 'CSS Mastery', author: 'Bob Johnson', isbn: 'ISBN-003', status: 'Available' },
-    { id: 4, title: 'HTML Basics', author: 'Alice Brown', isbn: 'ISBN-004', status: 'Overdue' }
-  ]
+
 
   
 
@@ -235,30 +230,28 @@ const Main = () => {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Book ID</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Author</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {books.map(book => (
-                    <tr key={book.id}>
-                      <td className="px-4 py-3 text-sm text-gray-900">#{book.id.toString().padStart(4, '0')}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{book.title}</td>
+                  {books.slice(0, 4).map(book => (
+                    <tr key={book.bookId}>
+                      <td className="px-4 py-3 text-sm text-gray-900">#{book.bookId.toString().padStart(4, '0')}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{book.bookName}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">{book.author}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">Technology</td>
                       <td className="px-4 py-3 text-sm">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
-                          book.status === 'Available' 
-                            ? 'bg-green-100 text-green-800' 
-                            : book.status === 'Borrowed'
+                          book.availabilityStatus === 'Available'
+                            ? 'bg-green-100 text-green-800'
+                            : book.availabilityStatus === 'Borrowed'
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-red-100 text-red-800'
                         }`}>
-                          {book.status}
+                          {book.availabilityStatus}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm">

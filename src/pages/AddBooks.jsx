@@ -1,27 +1,33 @@
-import React, { useState } from 'react'
+import React, { useState, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AppContext } from '../context/AppContext'
 
 const AddBooks = () => {
+  const navigate = useNavigate()
+  const { addBooks } = useContext(AppContext)
   
   
   const [formData, setFormData] = useState({
-    title: '',
+    bookName: '',
     author: '',
     isbn: '',
     category: '',
-    status: 'Available',
+    genre: '',
+    availabilityStatus: 'Available',
     description: '',
-    publishedYear: '',
+    dateOfPublication: '',
     publisher: '',
-    pages: '',
     language: 'English',
-    tags: ''
+    imageUrl: '',
+    quantity: 1,
+    ratings: 0,
+    numberOfViewers: 0,
+    numberOfReaders: 0
   })
 
   const [coverImage, setCoverImage] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [errors, setErrors] = useState({})
-  const navigate = useNavigate()
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -79,47 +85,86 @@ const AddBooks = () => {
   const validateForm = () => {
     const newErrors = {}
     
-    if (!formData.title.trim()) newErrors.title = 'Title is required'
+    if (!formData.bookName.trim()) newErrors.bookName = 'Book name is required'
     if (!formData.author.trim()) newErrors.author = 'Author is required'
     if (!formData.isbn.trim()) newErrors.isbn = 'ISBN is required'
     if (!formData.category) newErrors.category = 'Category is required'
-    if (formData.publishedYear && (formData.publishedYear < 1000 || formData.publishedYear > new Date().getFullYear())) {
-      newErrors.publishedYear = 'Please enter a valid year'
+    if (!formData.genre) newErrors.genre = 'Genre is required'
+    if (formData.quantity && formData.quantity < 1) {
+      newErrors.quantity = 'Quantity must be at least 1'
     }
-    if (formData.pages && formData.pages < 1) {
-      newErrors.pages = 'Pages must be a positive number'
+    if (formData.ratings && (formData.ratings < 0 || formData.ratings > 5)) {
+      newErrors.ratings = 'Rating must be between 0 and 5'
     }
     
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     
     if (!validateForm()) {
       return
     }
 
-    // Create FormData for file upload
-    const submitData = new FormData()
-    Object.keys(formData).forEach(key => {
-      submitData.append(key, formData[key])
-    })
-    
-    if (coverImage) {
-      submitData.append('coverImage', coverImage)
-    }
+    try {
+      // Prepare the book data according to your API structure
+      const bookData = {
+        bookName: formData.bookName,
+        author: formData.author,
+        publisher: formData.publisher || '',
+        dateOfPublication: formData.dateOfPublication || new Date().toISOString().split('T')[0],
+        isbn: formData.isbn,
+        language: formData.language,
+        category: formData.category,
+        genre: formData.genre,
+        description: formData.description || '',
+        imageUrl: formData.imageUrl || '',
+        quantity: parseInt(formData.quantity),
+        numberOfViewers: 0,
+        numberOfReaders: 0,
+        ratings: parseFloat(formData.ratings),
+        ratingsUpdatedBy: new Date().toISOString().split('T')[0],
+        availabilityStatus: formData.availabilityStatus
+      }
 
-    // Handle form submission logic here
-    console.log('New book data:', formData)
-    console.log('Cover image:', coverImage)
-    
-    // Show success message (you can replace with actual API call)
-    alert('Book added successfully!')
-    
-    // Navigate back to dashboard
-    
+      // Call the addBooks function from context
+      const result = await addBooks(bookData)
+      
+      console.log('Book added successfully:', result)
+      alert('Book added successfully!')
+      
+      // Reset form
+      setFormData({
+        bookName: '',
+        author: '',
+        isbn: '',
+        category: '',
+        genre: '',
+        availabilityStatus: 'Available',
+        description: '',
+        dateOfPublication: '',
+        publisher: '',
+        language: 'English',
+        imageUrl: '',
+        quantity: 1,
+        ratings: 0,
+        numberOfViewers: 0,
+        numberOfReaders: 0
+      })
+      
+      // Clear image
+      setCoverImage(null)
+      setImagePreview(null)
+      
+      // Navigate back to dashboard or all books page
+      navigate('/dashboard/all-books')
+      
+    } catch (error) {
+      console.error('Error adding book:', error)
+      alert('Error adding book. Please try again.')
+    }
   }
 
   const removeImage = () => {
@@ -137,7 +182,7 @@ const AddBooks = () => {
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
             <button 
-              onClick={() => {navigate('/dashboard')}} 
+              
               className="text-gray-500 hover:text-gray-700 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,23 +261,23 @@ const AddBooks = () => {
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Basic Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Title */}
+                {/* Book Name */}
                 <div className="md:col-span-2">
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                    Book Title *
+                  <label htmlFor="bookName" className="block text-sm font-medium text-gray-700 mb-2">
+                    Book Name *
                   </label>
                   <input
                     type="text"
-                    id="title"
-                    name="title"
-                    value={formData.title}
+                    id="bookName"
+                    name="bookName"
+                    value={formData.bookName}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                      errors.title ? 'border-red-500' : 'border-gray-300'
+                      errors.bookName ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="Enter book title"
+                    placeholder="Enter book name"
                   />
-                  {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
+                  {errors.bookName && <p className="mt-1 text-sm text-red-600">{errors.bookName}</p>}
                 </div>
 
                 {/* Author */}
@@ -288,10 +333,10 @@ const AddBooks = () => {
                     }`}
                   >
                     <option value="">Select Category</option>
-                    <option value="Technology">Technology</option>
                     <option value="Fiction">Fiction</option>
                     <option value="Non-Fiction">Non-Fiction</option>
                     <option value="Science">Science</option>
+                    <option value="Technology">Technology</option>
                     <option value="History">History</option>
                     <option value="Biography">Biography</option>
                     <option value="Education">Education</option>
@@ -302,15 +347,51 @@ const AddBooks = () => {
                   {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
                 </div>
 
-                {/* Status */}
+                {/* Genre */}
                 <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-                    Status
+                  <label htmlFor="genre" className="block text-sm font-medium text-gray-700 mb-2">
+                    Genre *
                   </label>
                   <select
-                    id="status"
-                    name="status"
-                    value={formData.status}
+                    id="genre"
+                    name="genre"
+                    value={formData.genre}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                      errors.genre ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Select Genre</option>
+                    <option value="Classic">Classic</option>
+                    <option value="Mystery">Mystery</option>
+                    <option value="Romance">Romance</option>
+                    <option value="Fantasy">Fantasy</option>
+                    <option value="Horror">Horror</option>
+                    <option value="Thriller">Thriller</option>
+                    <option value="Adventure">Adventure</option>
+                    <option value="Drama">Drama</option>
+                    <option value="Comedy">Comedy</option>
+                    <option value="Poetry">Poetry</option>
+                    <option value="Philosophy">Philosophy</option>
+                    <option value="Self-Help">Self-Help</option>
+                    <option value="Biography">Biography</option>
+                    <option value="Memoir">Memoir</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Cooking">Cooking</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  {errors.genre && <p className="mt-1 text-sm text-red-600">{errors.genre}</p>}
+                </div>
+
+                {/* Availability Status */}
+                <div>
+                  <label htmlFor="availabilityStatus" className="block text-sm font-medium text-gray-700 mb-2">
+                    Availability Status
+                  </label>
+                  <select
+                    id="availabilityStatus"
+                    name="availabilityStatus"
+                    value={formData.availabilityStatus}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   >
@@ -319,6 +400,26 @@ const AddBooks = () => {
                     <option value="Reserved">Reserved</option>
                     <option value="Maintenance">Under Maintenance</option>
                   </select>
+                </div>
+
+                {/* Quantity */}
+                <div>
+                  <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
+                    Quantity *
+                  </label>
+                  <input
+                    type="number"
+                    id="quantity"
+                    name="quantity"
+                    value={formData.quantity}
+                    onChange={handleInputChange}
+                    min="1"
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                      errors.quantity ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter quantity"
+                  />
+                  {errors.quantity && <p className="mt-1 text-sm text-red-600">{errors.quantity}</p>}
                 </div>
               </div>
             </div>
@@ -343,45 +444,35 @@ const AddBooks = () => {
                   />
                 </div>
 
-                {/* Published Year */}
+                {/* Date of Publication */}
                 <div>
-                  <label htmlFor="publishedYear" className="block text-sm font-medium text-gray-700 mb-2">
-                    Published Year
+                  <label htmlFor="dateOfPublication" className="block text-sm font-medium text-gray-700 mb-2">
+                    Date of Publication
                   </label>
                   <input
-                    type="number"
-                    id="publishedYear"
-                    name="publishedYear"
-                    value={formData.publishedYear}
+                    type="date"
+                    id="dateOfPublication"
+                    name="dateOfPublication"
+                    value={formData.dateOfPublication}
                     onChange={handleInputChange}
-                    min="1000"
-                    max={new Date().getFullYear()}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                      errors.publishedYear ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="Enter year"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   />
-                  {errors.publishedYear && <p className="mt-1 text-sm text-red-600">{errors.publishedYear}</p>}
                 </div>
 
-                {/* Pages */}
+                {/* Image URL */}
                 <div>
-                  <label htmlFor="pages" className="block text-sm font-medium text-gray-700 mb-2">
-                    Number of Pages
+                  <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-2">
+                    Image URL
                   </label>
                   <input
-                    type="number"
-                    id="pages"
-                    name="pages"
-                    value={formData.pages}
+                    type="url"
+                    id="imageUrl"
+                    name="imageUrl"
+                    value={formData.imageUrl}
                     onChange={handleInputChange}
-                    min="1"
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                      errors.pages ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="Enter number of pages"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    placeholder="Enter image URL"
                   />
-                  {errors.pages && <p className="mt-1 text-sm text-red-600">{errors.pages}</p>}
                 </div>
 
                 {/* Language */}
@@ -400,25 +491,35 @@ const AddBooks = () => {
                     <option value="Spanish">Spanish</option>
                     <option value="French">French</option>
                     <option value="German">German</option>
+                    <option value="Italian">Italian</option>
+                    <option value="Portuguese">Portuguese</option>
+                    <option value="Russian">Russian</option>
+                    <option value="Chinese">Chinese</option>
+                    <option value="Japanese">Japanese</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
 
-                {/* Tags */}
-                <div className="md:col-span-2">
-                  <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
-                    Tags
+                {/* Initial Rating */}
+                <div>
+                  <label htmlFor="ratings" className="block text-sm font-medium text-gray-700 mb-2">
+                    Initial Rating (0-5)
                   </label>
                   <input
-                    type="text"
-                    id="tags"
-                    name="tags"
-                    value={formData.tags}
+                    type="number"
+                    id="ratings"
+                    name="ratings"
+                    value={formData.ratings}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                    placeholder="Enter tags separated by commas (e.g., programming, web development, javascript)"
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                      errors.ratings ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter rating (0-5)"
                   />
-                  <p className="mt-1 text-xs text-gray-500">Separate multiple tags with commas</p>
+                  {errors.ratings && <p className="mt-1 text-sm text-red-600">{errors.ratings}</p>}
                 </div>
 
                 {/* Description */}
