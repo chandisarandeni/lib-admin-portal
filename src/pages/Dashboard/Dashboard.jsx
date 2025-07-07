@@ -16,6 +16,8 @@ import EditUserModal from "../../components/EditUserModal";
 import Profile from "../Profile";
 import { assets } from "../../assets/assests";
 import Borrow from "../Borrow";
+import { SiBookstack } from "react-icons/si";
+import Librarian from "../Librarian";
 
 
 const Dashboard = () => {
@@ -27,7 +29,8 @@ const Dashboard = () => {
     { name: "Users", path: "/dashboard/all-users", icon: <FaRegUser /> },
     { name: "Overdue Books", path: "/dashboard/overdue-books", icon: <FaRegCalendarTimes /> },
     { name: "profile", path: "/dashboard/profile", icon: <ImProfile /> },
-    {name: "Borrowed Books", path: "/dashboard/borrowed-books", icon: <RiBookShelfFill />},
+    {name: "Borrowed Books", path: "/dashboard/borrowed-books", icon: <SiBookstack />},
+    {name: "Librarians", path: "/dashboard/librarians", icon: <FaRegUser />},
   ];
 
   return (
@@ -95,6 +98,7 @@ const Dashboard = () => {
             <Route path="profile" element={<Profile />} />
             <Route path="overdue-books" element={<OverdueBooks />} />
             <Route path="borrowed-books" element={<Borrow />} />
+            <Route path="librarians" element={<Librarian />} />
           </Routes>
         </div>
       </div>
