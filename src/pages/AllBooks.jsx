@@ -27,7 +27,7 @@ const AllBooks = () => {
         }
       })
     }
-  }, [context]) // Depend on the entire context
+  }, []) // Depend on the entire context
   
   // Safety check for context
   if (!context) {

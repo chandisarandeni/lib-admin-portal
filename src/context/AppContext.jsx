@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState, useRef } from "react";
 
 export const AppContext = createContext()
 
@@ -9,6 +9,8 @@ const ContextProvider = ({ children }) => {
     const[allBooks, setAllBooks] = useState([]) // For showing all books including duplicates
     const [selectedGenre, setSelectedGenre] = useState("");
     const [selectedType, setSelectedType] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const lastFetchParams = useRef(null); // Track last fetch to prevent duplicates
     
     const fetchPopularBooks = async () => {
         try {
@@ -46,49 +48,66 @@ const ContextProvider = ({ children }) => {
     }
 
     useEffect(() => {
-        // Only fetch by genre if selectedType is not set and genre is set and not "All Genres"
-        if ((!selectedType || selectedType === "All Types") && selectedGenre && selectedGenre !== "All Genres") {
-            const fetchBooksByGenre = async () => {
-                try {
-                    const url = "http://localhost:8080/api/v1/books";
-                    const params = { genre: selectedGenre };
-                    const response = await axios.get(url, { params });
-                    
+        let isMounted = true; // Flag to prevent state updates if component unmounts
+        
+        const fetchBooks = async () => {
+            // Create params object for comparison
+            const currentParams = {
+                genre: selectedGenre && selectedGenre !== "All Genres" ? selectedGenre : null,
+                type: selectedType && selectedType !== "All Types" ? selectedType : null
+            };
+            
+            // Check if we already fetched with these exact parameters
+            if (lastFetchParams.current && 
+                JSON.stringify(currentParams) === JSON.stringify(lastFetchParams.current)) {
+                return; // Skip if same parameters
+            }
+            
+            setIsLoading(true);
+            lastFetchParams.current = currentParams;
+            
+            try {
+                let url = "http://localhost:8080/api/v1/books";
+                let params = {};
+                
+                // Only fetch by genre if selectedType is not set and genre is set and not "All Genres"
+                if ((!selectedType || selectedType === "All Types") && selectedGenre && selectedGenre !== "All Genres") {
+                    params = { genre: selectedGenre };
+                }
+                
+                const response = await axios.get(url, { params });
+                
+                if (isMounted) {
                     // Remove duplicates based on book title
                     const uniqueBooks = response.data.filter((book, index, self) =>
                         index === self.findIndex(b => b.bookName?.toLowerCase() === book.bookName?.toLowerCase())
                     );
                     
                     setBooks(uniqueBooks);
-                    console.log(uniqueBooks)
-                } catch (error) {
-                    setBooks([]);
-                    console.error("Error fetching books by genre:", error);
+                    console.log("Books fetched:", uniqueBooks.length, "books");
                 }
-            };
-            fetchBooksByGenre();
-        }
-        // If neither type nor genre is selected, fetch all books
-        else if ((!selectedType || selectedType === "All Types") && (!selectedGenre || selectedGenre === "All Genres")) {
-            const fetchAllBooksForFilter = async () => {
-                try {
-                    const url = "http://localhost:8080/api/v1/books";
-                    const response = await axios.get(url);
-                    
-                    // Remove duplicates based on book title
-                    const uniqueBooks = response.data.filter((book, index, self) =>
-                        index === self.findIndex(b => b.bookName?.toLowerCase() === book.bookName?.toLowerCase())
-                    );
-                    
-                    setBooks(uniqueBooks);
-                    console.log(uniqueBooks)
-                } catch (error) {
+            } catch (error) {
+                if (isMounted) {
                     setBooks([]);
-                    console.error("Error fetching all books:", error);
+                    console.error("Error fetching books:", error);
                 }
-            };
-            fetchAllBooksForFilter();
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        // Only fetch if we have meaningful filter criteria or want all books
+        if ((!selectedType || selectedType === "All Types") && 
+            ((!selectedGenre || selectedGenre === "All Genres") || 
+             (selectedGenre && selectedGenre !== "All Genres"))) {
+            fetchBooks();
         }
+
+        return () => {
+            isMounted = false; // Cleanup function to prevent state updates after unmount
+        };
     }, [selectedGenre, selectedType]);
 
     const addBooks = async (newBook) => {
@@ -104,9 +123,33 @@ const ContextProvider = ({ children }) => {
             throw error;
         }
     }
+
+    const fetchIssuedBooks = async () => {
+        try {
+            const url = "http://localhost:8080/api/v1/borrowings";
+            const response = await axios.get(url);
+            console.log("Issued books fetched:", response.data);
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching issued books:", error);
+            throw error;
+        }
+    }
     
     return (
-        <AppContext.Provider value={{ fetchPopularBooks, fetchAllBooks, books, allBooks, addBooks }}>
+        <AppContext.Provider value={{ 
+            fetchPopularBooks, 
+            fetchAllBooks, 
+            books, 
+            allBooks, 
+            addBooks, 
+            isLoading,
+            selectedGenre,
+            setSelectedGenre,
+            selectedType,
+            setSelectedType,
+            fetchIssuedBooks
+        }}>
             {children}
         </AppContext.Provider>
     )

@@ -30,7 +30,7 @@ const BookDetails = ({ isOpen, onClose, book }) => {
     return diffDays
   }
 
-  const daysRemaining = getDaysRemaining(book.dueDate)
+  const daysRemaining = getDaysRemaining(book.returnDate)
 
   return (
     <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -59,7 +59,7 @@ const BookDetails = ({ isOpen, onClose, book }) => {
                     <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <p className="text-sm text-gray-600">Book ID: #{book.id}</p>
+                <p className="text-sm text-gray-600">Book ID: #{book.bookId}</p>
               </div>
             </div>
 

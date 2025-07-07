@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import BookDetails from '../components/BookDetails'
 import IssueBook from '../components/IssueBook'
+import { AppContext } from '../context/AppContext'
 
 const Borrow = () => {
   const [search, setSearch] = useState('')
@@ -15,126 +16,45 @@ const Borrow = () => {
   const itemsPerPage = 5
 
   // Mock data for issued books (you can replace this with actual data from your API)
-  const issuedBooks = [
-    {
-      id: 1,
-      bookName: "The Great Gatsby",
-      author: "F. Scott Fitzgerald",
-      borrowerName: "John Doe",
-      borrowerEmail: "john@example.com",
-      memberId: "LIB001",
-      issueDate: "2025-07-02",
-      dueDate: "2025-07-15",
-      status: "Active"
-    },
-    {
-      id: 2,
-      bookName: "To Kill a Mockingbird",
-      author: "Harper Lee",
-      borrowerName: "Jane Smith",
-      borrowerEmail: "jane@example.com",
-      memberId: "LIB002",
-      issueDate: "2025-06-20",
-      dueDate: "2025-07-20",
-      status: "Active"
-    },
-    {
-      id: 3,
-      bookName: "1984",
-      author: "George Orwell",
-      borrowerName: "Bob Johnson",
-      borrowerEmail: "bob@example.com",
-      memberId: "LIB003",
-      issueDate: "2025-05-10",
-      dueDate: "2025-06-10",
-      status: "Overdue"
-    },
-    {
-      id: 4,
-      bookName: "Pride and Prejudice",
-      author: "Jane Austen",
-      borrowerName: "Alice Brown",
-      borrowerEmail: "alice@example.com",
-      memberId: "LIB004",
-      issueDate: "2025-07-01",
-      dueDate: "2025-08-01",
-      status: "Active"
-    },
-    {
-      id: 5,
-      bookName: "The Catcher in the Rye",
-      author: "J.D. Salinger",
-      borrowerName: "Charlie Wilson",
-      borrowerEmail: "charlie@example.com",
-      memberId: "LIB005",
-      issueDate: "2025-05-01",
-      dueDate: "2025-06-01",
-      status: "Overdue"
+  const [issuedBooks, setIssuedBooks] = useState([])
+
+  const {fetchIssuedBooks, fetchAllBooks, allBooks} = useContext(AppContext)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      // Fetch both issued books and all books data
+      const [issuedBooksData] = await Promise.all([
+        fetchIssuedBooks(),
+        fetchAllBooks()
+      ])
+      setIssuedBooks(issuedBooksData)
     }
-    ,
-    {
-      id: 6,
-      bookName: "The Catcher in the Rye",
-      author: "J.D. Salinger",
-      borrowerName: "Charlie Wilson",
-      borrowerEmail: "charlie@example.com",
-      memberId: "LIB005",
-      issueDate: "2025-05-01",
-      dueDate: "2025-06-01",
-      status: "Overdue"
-    },
-    {
-      id: 7,
-      bookName: "The Great Gatsby",
-      author: "F. Scott Fitzgerald",
-      borrowerName: "John Doe",
-      borrowerEmail: "john@example.com",
-      memberId: "LIB001",
-      issueDate: "2025-06-25",
-      dueDate: "2025-07-15",
-      status: "Active"
-    },
-    {
-      id: 8,
-      bookName: "The Great Gatsby",
-      author: "F. Scott Fitzgerald",
-      borrowerName: "John Doe",
-      borrowerEmail: "john@example.com",
-      memberId: "LIB001",
-      issueDate: "2025-06-15",
-      dueDate: "2025-07-15",
-      status: "Active"
-    },
-    {
-      id: 9,
-      bookName: "The Great Gatsby",
-      author: "F. Scott Fitzgerald",
-      borrowerName: "John Doe",
-      borrowerEmail: "john@example.com",
-      memberId: "LIB001",
-      issueDate: "2025-06-10",
-      dueDate: "2025-07-15",
-      status: "Active"
-    },
-    {
-      id: 10,
-      bookName: "The Great Gatsby",
-      author: "F. Scott Fitzgerald",
-      borrowerName: "John Doe",
-      borrowerEmail: "john@example.com",
-      memberId: "LIB001",
-      issueDate: "2025-05-28",
-      dueDate: "2025-07-15",
-      status: "Active"
-    },
-  ]
+    fetchData()
+  }, [])
+
+  // Helper function to get book details by bookId
+  const getBookDetails = (bookId) => {
+    const book = allBooks.find(book => book.bookId === bookId)
+    return book ? {
+      bookName: book.bookName || 'Unknown Book',
+      author: book.author || 'Unknown Author'
+    } : {
+      bookName: 'Unknown Book',
+      author: 'Unknown Author'
+    }
+  }
 
   // Filter issued books based on search
-  const filteredIssuedBooks = issuedBooks.filter(book =>
-    book.bookName.toLowerCase().includes(search.toLowerCase()) ||
-    book.author.toLowerCase().includes(search.toLowerCase()) ||
-    book.borrowerName.toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredIssuedBooks = issuedBooks.filter(book => {
+    const bookDetails = getBookDetails(book.bookId)
+    return (
+      (book.id && book.id.toString().includes(search)) ||
+      (bookDetails.bookName && bookDetails.bookName.toString().includes(search)) ||
+      (bookDetails.author && bookDetails.author.toString().includes(search)) ||
+      (book.memberId && book.memberId.toString().includes(search)) ||
+      (book.borrowerName && book.borrowerName.toString().includes(search))
+    )
+  })
 
   // Pagination for main table
   const totalPages = Math.ceil(filteredIssuedBooks.length / itemsPerPage)
@@ -198,7 +118,7 @@ const Borrow = () => {
   }
 
   // Pagination component
-  const Pagination = ({ currentPage, totalPages, onPageChange, label }) => {
+  const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     const pages = []
     for (let i = 1; i <= totalPages; i++) {
       pages.push(i)
@@ -256,7 +176,7 @@ const Borrow = () => {
             </svg>
             <input
               type="text"
-              placeholder="Search by book title, author, or borrower..."
+              placeholder="Search by book name, author, member ID, or borrower..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
@@ -294,15 +214,17 @@ const Borrow = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedIssuedBooks.map(book => (
+              {paginatedIssuedBooks.map(book => {
+                const bookDetails = getBookDetails(book.bookId)
+                return (
                 <tr key={book.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900 text-lg">#{book.id}</div>
+                    <div className="font-medium text-gray-900 text-lg">#{book.bookId}</div>
                   </td>
                   <td className="px-6 py-4">
                     <div>
-                      <div className="font-medium text-gray-900">{book.bookName}</div>
-                      <div className="text-sm text-gray-500">by {book.author}</div>
+                      <div className="font-medium text-gray-900">{bookDetails.bookName}</div>
+                      <div className="text-sm text-gray-500">by {bookDetails.author}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -314,8 +236,8 @@ const Borrow = () => {
                       <div className="text-sm text-gray-500">{book.borrowerEmail}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{formatDate(book.issueDate)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{formatDate(book.dueDate)}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{formatDate(book.borrowingDate)}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{formatDate(book.returnDate)}</td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(book.status)}`}>
                       {book.status}
@@ -334,7 +256,8 @@ const Borrow = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+                )
+              })}
               {paginatedIssuedBooks.length === 0 && (
                 <tr>
                   <td colSpan={8} className="text-center py-8 text-gray-400">No issued books found.</td>
@@ -367,16 +290,19 @@ const Borrow = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {recentlyBorrowed.map(book => (
+                {recentlyBorrowed.map(book => {
+                  const bookDetails = getBookDetails(book.bookId)
+                  return (
                   <tr key={`recent-${book.id}`} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900 text-sm">{book.bookName}</div>
-                      <div className="text-xs text-gray-500">{book.author}</div>
+                      <div className="font-medium text-gray-900 text-sm">{bookDetails.bookName}</div>
+                      <div className="text-xs text-gray-500">{bookDetails.author}</div>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">{book.borrowerName}</td>
                     <td className="px-4 py-3 text-sm text-gray-900">{formatDate(book.issueDate)}</td>
                   </tr>
-                ))}
+                  )
+                })}
                 {recentlyBorrowed.length === 0 && (
                   <tr>
                     <td colSpan={3} className="text-center py-6 text-gray-400 text-sm">No recent borrowings.</td>
@@ -407,16 +333,19 @@ const Borrow = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {overdueBooks.map(book => (
+                {overdueBooks.map(book => {
+                  const bookDetails = getBookDetails(book.bookId)
+                  return (
                   <tr key={`overdue-${book.id}`} className="hover:bg-red-50">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900 text-sm">{book.bookName}</div>
-                      <div className="text-xs text-gray-500">{book.author}</div>
+                      <div className="font-medium text-gray-900 text-sm">{bookDetails.bookName}</div>
+                      <div className="text-xs text-gray-500">{bookDetails.author}</div>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">{book.borrowerName}</td>
                     <td className="px-4 py-3 text-sm text-red-600 font-medium">{formatDate(book.dueDate)}</td>
                   </tr>
-                ))}
+                  )
+                })}
                 {overdueBooks.length === 0 && (
                   <tr>
                     <td colSpan={3} className="text-center py-6 text-gray-400 text-sm">No overdue books.</td>

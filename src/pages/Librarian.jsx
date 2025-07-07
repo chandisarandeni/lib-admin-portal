@@ -78,8 +78,7 @@ const Librarian = () => {
   const filteredLibrarians = librarians.filter(librarian =>
     librarian.name.toLowerCase().includes(search.toLowerCase()) ||
     librarian.email.toLowerCase().includes(search.toLowerCase()) ||
-    librarian.employeeId.toLowerCase().includes(search.toLowerCase()) ||
-    librarian.department.toLowerCase().includes(search.toLowerCase())
+    librarian.employeeId.toLowerCase().includes(search.toLowerCase())
   )
 
   // Calculate pagination
@@ -113,7 +112,6 @@ const Librarian = () => {
       email: '',
       phone: '',
       employeeId: '',
-      department: '',
       joinDate: '',
       status: 'Active',
       shift: 'Morning',
@@ -167,7 +165,6 @@ const Librarian = () => {
     if (!editFormData.email?.trim()) newErrors.email = 'Email is required'
     if (!editFormData.phone?.trim()) newErrors.phone = 'Phone is required'
     if (!editFormData.employeeId?.trim()) newErrors.employeeId = 'Employee ID is required'
-    if (!editFormData.department) newErrors.department = 'Department is required'
     
     // Email validation
     if (editFormData.email && !/\S+@\S+\.\S+/.test(editFormData.email)) {
@@ -185,7 +182,6 @@ const Librarian = () => {
     if (!addFormData.email?.trim()) newErrors.email = 'Email is required'
     if (!addFormData.phone?.trim()) newErrors.phone = 'Phone is required'
     if (!addFormData.employeeId?.trim()) newErrors.employeeId = 'Employee ID is required'
-    if (!addFormData.department) newErrors.department = 'Department is required'
     
     // Email validation
     if (addFormData.email && !/\S+@\S+\.\S+/.test(addFormData.email)) {
@@ -389,31 +385,6 @@ const Librarian = () => {
                         placeholder="Enter phone number"
                       />
                       {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
-                    </div>
-
-                    {/* Department */}
-                    <div>
-                      <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
-                        Department *
-                      </label>
-                      <select
-                        id="department"
-                        name="department"
-                        value={editFormData.department || ''}
-                        onChange={handleInputChange}
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                          errors.department ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      >
-                        <option value="">Select Department</option>
-                        <option value="Reference">Reference</option>
-                        <option value="Technical Services">Technical Services</option>
-                        <option value="Children's Section">Children's Section</option>
-                        <option value="Administration">Administration</option>
-                        <option value="Circulation">Circulation</option>
-                        <option value="Acquisitions">Acquisitions</option>
-                      </select>
-                      {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
                     </div>
 
                     {/* Status */}
@@ -621,31 +592,6 @@ const Librarian = () => {
                       {addErrors.phone && <p className="mt-1 text-sm text-red-600">{addErrors.phone}</p>}
                     </div>
 
-                    {/* Department */}
-                    <div>
-                      <label htmlFor="add-department" className="block text-sm font-medium text-gray-700 mb-1">
-                        Department *
-                      </label>
-                      <select
-                        id="add-department"
-                        name="department"
-                        value={addFormData.department || ''}
-                        onChange={handleAddInputChange}
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                          addErrors.department ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      >
-                        <option value="">Select Department</option>
-                        <option value="Reference">Reference</option>
-                        <option value="Technical Services">Technical Services</option>
-                        <option value="Children's Section">Children's Section</option>
-                        <option value="Administration">Administration</option>
-                        <option value="Circulation">Circulation</option>
-                        <option value="Acquisitions">Acquisitions</option>
-                      </select>
-                      {addErrors.department && <p className="mt-1 text-sm text-red-600">{addErrors.department}</p>}
-                    </div>
-
                     {/* Status */}
                     <div>
                       <label htmlFor="add-status" className="block text-sm font-medium text-gray-700 mb-1">
@@ -760,7 +706,7 @@ const Librarian = () => {
           <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
-              placeholder="Search by name, email, or department..."
+              placeholder="Search by name, email, or employee ID..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors w-full sm:w-80"
@@ -786,7 +732,6 @@ const Librarian = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shift</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Experience</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -809,7 +754,6 @@ const Librarian = () => {
                       <div className="text-gray-500 text-xs">{librarian.phone}</div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">{librarian.department}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{librarian.shift}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{librarian.experience}</td>
                   <td className="px-4 py-3 text-sm">
@@ -835,7 +779,7 @@ const Librarian = () => {
               ))}
               {currentLibrarians.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="text-center py-8 text-gray-400">No librarians found.</td>
+                  <td colSpan={7} className="text-center py-8 text-gray-400">No librarians found.</td>
                 </tr>
               )}
             </tbody>
