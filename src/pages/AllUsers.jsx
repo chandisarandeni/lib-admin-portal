@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import EditBookModal from '../components/EditBookModal' // Adjust the path if needed
+import { useNavigate } from 'react-router-dom'
 
 // Example random users data
 const initialUsers = Array.from({ length: 30 }).map((_, i) => ({
@@ -87,6 +88,8 @@ const AllUsers = () => {
     setSelectedUser(null)
   }
 
+  const navigate = useNavigate()
+
   return (
     <div className="relative">
       {/* Modal and blur background */}
@@ -107,13 +110,24 @@ const AllUsers = () => {
       <div className={`p-6 ${isEditModalOpen ? 'pointer-events-none select-none blur-sm' : ''}`}>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-3">
           <h2 className="text-xl font-bold text-gray-800">All Users</h2>
-          <input
-            type="text"
-            placeholder="Search by name or role..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors w-full md:w-64"
-          />
+          <div className="flex flex-col md:flex-row gap-3">
+            <input
+              type="text"
+              placeholder="Search by name or role..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors w-full md:w-64"
+            />
+            <button
+              onClick={() => {navigate('/dashboard/add-user')}}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium whitespace-nowrap"
+            >
+              <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Add User
+            </button>
+          </div>
         </div>
 
         {/* Results info */}

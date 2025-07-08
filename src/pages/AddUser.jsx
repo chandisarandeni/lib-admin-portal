@@ -90,14 +90,6 @@ const AddUser = () => {
       newErrors.email = 'Please enter a valid email address'
     }
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required'
-    if (!formData.role) newErrors.role = 'Role is required'
-    if (formData.role === 'Student' && !formData.studentId.trim()) {
-      newErrors.studentId = 'Student ID is required for students'
-    }
-    if ((formData.role === 'Faculty' || formData.role === 'Staff') && !formData.employeeId.trim()) {
-      newErrors.employeeId = 'Employee ID is required for faculty/staff'
-    }
-    if (!formData.department.trim()) newErrors.department = 'Department is required'
     
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -351,95 +343,6 @@ const AddUser = () => {
                     placeholder="Enter full address"
                   />
                 </div>
-              </div>
-            </div>
-
-            {/* Role & Department Information */}
-            <div>
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Role & Department</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Role */}
-                <div>
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                    Role *
-                  </label>
-                  <select
-                    id="role"
-                    name="role"
-                    value={formData.role}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                      errors.role ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="Student">Student</option>
-                    <option value="Faculty">Faculty</option>
-                    <option value="Staff">Staff</option>
-                    <option value="Visitor">Visitor</option>
-                  </select>
-                  {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
-                </div>
-
-                {/* Department */}
-                <div>
-                  <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-2">
-                    Department *
-                  </label>
-                  <input
-                    type="text"
-                    id="department"
-                    name="department"
-                    value={formData.department}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                      errors.department ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="Enter department name"
-                  />
-                  {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
-                </div>
-
-                {/* Student ID (conditional) */}
-                {formData.role === 'Student' && (
-                  <div>
-                    <label htmlFor="studentId" className="block text-sm font-medium text-gray-700 mb-2">
-                      Student ID *
-                    </label>
-                    <input
-                      type="text"
-                      id="studentId"
-                      name="studentId"
-                      value={formData.studentId}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                        errors.studentId ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Enter student ID"
-                    />
-                    {errors.studentId && <p className="mt-1 text-sm text-red-600">{errors.studentId}</p>}
-                  </div>
-                )}
-
-                {/* Employee ID (conditional) */}
-                {(formData.role === 'Faculty' || formData.role === 'Staff') && (
-                  <div>
-                    <label htmlFor="employeeId" className="block text-sm font-medium text-gray-700 mb-2">
-                      Employee ID *
-                    </label>
-                    <input
-                      type="text"
-                      id="employeeId"
-                      name="employeeId"
-                      value={formData.employeeId}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                        errors.employeeId ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Enter employee ID"
-                    />
-                    {errors.employeeId && <p className="mt-1 text-sm text-red-600">{errors.employeeId}</p>}
-                  </div>
-                )}
 
                 {/* Status */}
                 <div>
@@ -458,43 +361,6 @@ const AddUser = () => {
                     <option value="Suspended">Suspended</option>
                   </select>
                 </div>
-
-                {/* Max Books Allowed */}
-                <div>
-                  <label htmlFor="maxBooksAllowed" className="block text-sm font-medium text-gray-700 mb-2">
-                    Max Books Allowed
-                  </label>
-                  <input
-                    type="number"
-                    id="maxBooksAllowed"
-                    name="maxBooksAllowed"
-                    value={formData.maxBooksAllowed}
-                    onChange={handleInputChange}
-                    min="1"
-                    max="20"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                    placeholder="Enter max books allowed"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Additional Notes */}
-            <div>
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Additional Information</h2>
-              <div>
-                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                  Notes
-                </label>
-                <textarea
-                  id="notes"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  rows="4"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors resize-vertical"
-                  placeholder="Enter any additional notes about the user..."
-                />
               </div>
             </div>
 
