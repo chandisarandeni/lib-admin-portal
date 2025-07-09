@@ -5,11 +5,11 @@ const AddUser = () => {
 
   
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     phone: '',
     address: '',
+    password: '',
     role: 'Student',
     department: '',
     studentId: '',
@@ -82,14 +82,18 @@ const AddUser = () => {
   const validateForm = () => {
     const newErrors = {}
     
-    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required'
-    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required'
+    if (!formData.name.trim()) newErrors.name = 'Name is required'
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address'
     }
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required'
+    if (!formData.password.trim()) {
+      newErrors.password = 'Password is required'
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters long'
+    }
     
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -217,42 +221,23 @@ const AddUser = () => {
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Personal Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* First Name */}
+                {/* Name */}
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                    First Name *
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Name *
                   </label>
                   <input
                     type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
+                    id="name"
+                    name="name"
+                    value={formData.name}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                      errors.firstName ? 'border-red-500' : 'border-gray-300'
+                      errors.name ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="Enter first name"
+                    placeholder="Enter full name"
                   />
-                  {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
-                </div>
-
-                {/* Last Name */}
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Last Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                      errors.lastName ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="Enter last name"
-                  />
-                  {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
+                  {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
                 </div>
 
                 {/* Email */}
@@ -291,6 +276,25 @@ const AddUser = () => {
                     placeholder="Enter phone number"
                   />
                   {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                    Password *
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                      errors.password ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter password"
+                  />
+                  {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
                 </div>
 
                 {/* Date of Birth */}
