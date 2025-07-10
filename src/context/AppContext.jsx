@@ -147,9 +147,23 @@ const ContextProvider = ({ children }) => {
             throw error;
         }
     }
+
+        const editMember  = async (memberId, updatedData) => {
+            try {
+                const url = `http://localhost:8080/api/v1/members/${memberId}`;
+                const response = await axios.put(url, updatedData);
+                console.log("Member updated successfully:", response.data);
+                return response.data;
+            } catch (error) {
+                console.error("Error updating member:", error);
+                throw error;
+            }
+        }
+    
     
     return (
-        <AppContext.Provider value={{ 
+        <AppContext.Provider value={{
+            editMember,
             fetchPopularBooks, 
             fetchAllBooks, 
             books, 

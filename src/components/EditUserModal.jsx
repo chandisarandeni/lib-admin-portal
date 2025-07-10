@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext } from 'react'
+import { AppContext } from '../context/AppContext'
 
 const EditUserModal = ({ isOpen, onClose, user, onSubmit }) => {
+  const {editMember} = useContext(AppContext)
   const [formData, setFormData] = useState({
     fullName: '',
     nic: '',
@@ -15,12 +17,12 @@ const EditUserModal = ({ isOpen, onClose, user, onSubmit }) => {
   useEffect(() => {
     if (user) {
       setFormData({
-        fullName: user.name || '',
+        fullName: user.fullName || user.name || '',
         nic: user.nic || '',
         email: user.email || '',
-        phoneNumber: user.phoneNumber || '',
+        phoneNumber: user.phoneNumber || user.phone || '',
         address: user.address || '',
-        dateOfBirth: user.dateOfBirth || '',
+        dateOfBirth: user.dateOfBirth || user.dob || '',
         gender: user.gender || '',
         profilePic: null
       })
@@ -43,10 +45,25 @@ const EditUserModal = ({ isOpen, onClose, user, onSubmit }) => {
     }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    onSubmit(formData)
-    onClose()
+    try {
+      // Call editMember from AppContext to update the user
+      await editMember(user.memberId, formData)
+      
+      // Call the onSubmit prop if provided (for parent component handling)
+      if (onSubmit) {
+        onSubmit(formData)
+      }
+
+      window.alert('User updated successfully!')
+      
+      // Close the modal
+      onClose()
+    } catch (error) {
+      console.error('Error updating user:', error)
+      // You can add error handling here (show toast, alert, etc.)
+    }
   }
 
   if (!isOpen) return null
