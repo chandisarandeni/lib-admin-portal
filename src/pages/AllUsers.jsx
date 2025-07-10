@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import EditUserModal from '../components/EditUserModal'
+import { AppContext } from '../context/AppContext'
 
-// Example random users data
-const initialUsers = Array.from({ length: 30 }).map((_, i) => ({
+// Example random members data
+const members = Array.from({ length: 30 }).map((_, i) => ({
   id: i + 1,
   name: `User ${i + 1}`,
   email: `user${i + 1}@example.com`,
@@ -15,16 +16,17 @@ const initialUsers = Array.from({ length: 30 }).map((_, i) => ({
 
 const AllUsers = () => {
   const [search, setSearch] = useState('')
-  const [users] = useState(initialUsers)
+  const [members, setMembers] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const usersPerPage = 15
+  const {fetchAllMembers} = useContext(AppContext)
 
   // Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
 
   // Filter users by name, role, or email
-  const filteredUsers = users.filter(
+  const filteredUsers = members.filter(
     user =>
       user.name.toLowerCase().includes(search.toLowerCase()) ||
       user.role.toLowerCase().includes(search.toLowerCase()) ||
@@ -41,6 +43,14 @@ const AllUsers = () => {
   React.useEffect(() => {
     setCurrentPage(1)
   }, [search])
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      const allMembers = await fetchAllMembers()
+      setMembers(allMembers)
+    }
+    fetchMembers()
+  }, [fetchAllMembers])
 
   const handlePageChange = (page) => {
     setCurrentPage(page)
@@ -160,9 +170,9 @@ const AllUsers = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {currentUsers.map(user => (
-                <tr key={user.id}>
-                  <td className="px-4 py-3 text-sm text-gray-900">#{user.id.toString().padStart(4, '0')}</td>
+              {members.map(user => (
+                <tr key={user.memberId}>
+                  <td className="px-4 py-3 text-sm text-gray-900">#{user.memberId.toString().padStart(4, '0')}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-red-500 rounded-full flex-shrink-0"></div>

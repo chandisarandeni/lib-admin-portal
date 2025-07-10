@@ -26,10 +26,10 @@ const Main = () => {
   ]
 
   const users = [
-    { id: 1, name: 'John Doe', books: 5, role: 'Student', status: 'Active' },
-    { id: 2, name: 'Jane Smith', books: 3, role: 'Faculty', status: 'Active' },
-    { id: 3, name: 'Mike Johnson', books: 7, role: 'Student', status: 'Inactive' },
-    { id: 4, name: 'Sarah Wilson', books: 2, role: 'Staff', status: 'Active' }
+    { id: 1, name: 'John Doe', email: 'john@example.com', address: '123 Main St, City A', books: 5, role: 'Student', status: 'Active' },
+    { id: 2, name: 'Jane Smith', email: 'jane@example.com', address: '456 Oak Ave, City B', books: 3, role: 'Faculty', status: 'Active' },
+    { id: 3, name: 'Mike Johnson', email: 'mike@example.com', address: '789 Pine Rd, City C', books: 7, role: 'Student', status: 'Inactive' },
+    { id: 4, name: 'Sarah Wilson', email: 'sarah@example.com', address: '321 Elm St, City D', books: 2, role: 'Staff', status: 'Active' }
   ]
 
 
@@ -174,9 +174,7 @@ const Main = () => {
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Books Issued</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -190,17 +188,7 @@ const Main = () => {
                           {user.name}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{user.books}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{user.role}</td>
-                      <td className="px-4 py-3 text-sm">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
-                          user.status === 'Active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {user.status}
-                        </span>
-                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{user.email}</td>
                       <td className="px-4 py-3 text-sm">
                         <button onClick={() => openUserEditModal(user)} className="border border-gray-300 px-3 py-1 rounded text-xs text-gray-600 hover:bg-gray-50 transition-colors">
                           Edit
