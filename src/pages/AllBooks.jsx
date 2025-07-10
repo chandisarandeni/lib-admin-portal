@@ -202,12 +202,39 @@ const AllBooks = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    <button
-                      className="border border-gray-300 px-3 py-1 rounded text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-                      onClick={() => openEditModal(book)}
-                    >
-                      Edit
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        className="border border-gray-300 px-3 py-1 rounded text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+                        onClick={() => openEditModal(book)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="border border-red-300 px-3 py-1 rounded text-xs text-red-600 hover:bg-red-50 transition-colors"
+                        onClick={async () => {
+                          if (window.confirm(`Are you sure you want to delete "${book.title || book.bookName}"?`)) {
+                            if (context?.deleteBook) {
+                              // Optimistically update UI first
+                              setLocalBooks(prevBooks => prevBooks.filter(b => b.bookId !== book.bookId))
+                              
+                              try {
+                                await context.deleteBook(book.bookId)
+                                // Success - book already removed from UI
+                              } catch (err) {
+                                // Revert the optimistic update on error
+                                setLocalBooks(prevBooks => [...prevBooks, book])
+                                alert('Failed to delete book. Please try again.')
+                                console.error('Delete book error:', err)
+                              }
+                            } else {
+                              alert('Delete function not available.')
+                            }
+                          }
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

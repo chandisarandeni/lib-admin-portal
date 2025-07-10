@@ -137,6 +137,18 @@ const ContextProvider = ({ children }) => {
         }
     }
 
+    const deleteBook = async (bookId) => {
+        try {
+            const url = `http://localhost:8080/api/v1/books/delete/${bookId}`;
+            await axios.delete(url);
+            setBooks(prevBooks => prevBooks.filter(book => book.bookId !== bookId));
+            console.log("Book deleted successfully:", bookId);
+        } catch (error) {
+            console.error("Error deleting book:", error);
+            throw error;
+        }
+    }
+
     const fetchAllMembers = async () => {
         try {
             const url = "http://localhost:8080/api/v1/members";
@@ -214,7 +226,8 @@ const ContextProvider = ({ children }) => {
             editMember,
             fetchAllMembers,
             addMembers,
-            deleteMember
+            deleteMember,
+            deleteBook
         }}>
             {children}
         </AppContext.Provider>
