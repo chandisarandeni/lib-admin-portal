@@ -161,10 +161,10 @@ const Main = () => {
           {/* Users List */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="flex justify-between items-center p-5 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800">Users List</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Members List</h3>
               <div className="flex gap-2">
                 <button onClick={() => {navigate('/dashboard/add-user')}} className="bg-[#B67242] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#8E552C] transition-colors">
-                  Add New User
+                  Add New Member
                 </button>
                 <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200 transition-colors">
                   View All
@@ -182,7 +182,7 @@ const Main = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {members.map(user => (
+                  {members.slice(0, 4).map(user => (
                     <tr key={user.memberId}>
                       <td className="px-4 py-3 text-sm text-gray-900">#{user.memberId.toString().padStart(4, '0')}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">

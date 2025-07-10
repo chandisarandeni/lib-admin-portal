@@ -26,7 +26,7 @@ const Dashboard = () => {
   const sidebarLinks = [
     { name: "Dashboard", path: "/dashboard", icon: <LuLayoutDashboard /> },
     { name: "Books", path: "/dashboard/all-books", icon: <RiBookShelfFill /> },
-    { name: "Users", path: "/dashboard/all-users", icon: <FaRegUser /> },
+    { name: "Members", path: "/dashboard/all-users", icon: <FaRegUser /> },
     { name: "Overdue Books", path: "/dashboard/overdue-books", icon: <FaRegCalendarTimes /> },
     { name: "profile", path: "/dashboard/profile", icon: <ImProfile /> },
     {name: "Borrowed Books", path: "/dashboard/borrowed-books", icon: <SiBookstack />},

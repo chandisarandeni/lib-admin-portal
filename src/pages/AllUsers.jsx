@@ -10,7 +10,7 @@ const AllUsers = () => {
   const [search, setSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const usersPerPage = 15
-  const {members, setMembers, editMember, fetchAllMembers} = useContext(AppContext)
+  const {members, setMembers, editMember, fetchAllMembers, deleteMember} = useContext(AppContext)
 
   // Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -88,10 +88,17 @@ const AllUsers = () => {
     setSelectedUser(null)
   }
 
-  const handleDeleteUser = (user) => {
+  const handleDeleteUser = async (user) => {
     if (window.confirm(`Are you sure you want to delete ${user.name}?`)) {
-      console.log('Delete user:', user)
-      // Handle user deletion logic here
+      try {
+        await deleteMember(user.memberId);
+        console.log('User deleted successfully:', user);
+        // The context function automatically updates the members state
+        // So no need to manually update local state
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        alert('Error deleting user. Please try again.');
+      }
     }
   }
 

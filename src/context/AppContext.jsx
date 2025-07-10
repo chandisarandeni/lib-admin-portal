@@ -164,6 +164,18 @@ const ContextProvider = ({ children }) => {
         }
     }
 
+    const deleteMember = async (memberId) => {
+        try {
+            const url = `http://localhost:8080/api/v1/members/${memberId}`;
+            await axios.delete(url);
+            setMembers(prevMembers => prevMembers.filter(member => member.memberId !== memberId));
+            console.log("Member deleted successfully:", memberId);
+        } catch (error) {
+            console.error("Error deleting member:", error);
+            throw error;
+        }
+    }
+
     useEffect(() => {
         fetchAllMembers();
     }, [])
@@ -201,7 +213,8 @@ const ContextProvider = ({ children }) => {
             setMembers,
             editMember,
             fetchAllMembers,
-            addMembers
+            addMembers,
+            deleteMember
         }}>
             {children}
         </AppContext.Provider>
