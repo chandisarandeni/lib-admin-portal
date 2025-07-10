@@ -135,6 +135,18 @@ const ContextProvider = ({ children }) => {
             throw error;
         }
     }
+
+    const fetchAllMembers = async () => {
+        try {
+            const url = "http://localhost:8080/api/v1/members";
+            const response = await axios.get(url);
+            console.log("All members fetched:", response.data);
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching all members:", error);
+            throw error;
+        }
+    }
     
     return (
         <AppContext.Provider value={{ 
@@ -148,7 +160,8 @@ const ContextProvider = ({ children }) => {
             setSelectedGenre,
             selectedType,
             setSelectedType,
-            fetchIssuedBooks
+            fetchIssuedBooks,
+            fetchAllMembers
         }}>
             {children}
         </AppContext.Provider>
