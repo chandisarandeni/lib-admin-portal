@@ -48,16 +48,23 @@ const EditUserModal = ({ isOpen, onClose, user, onSubmit }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      // Call editMember from AppContext to update the user
-      await editMember(user.memberId, formData)
-      
+      // Map frontend fields to backend fields before sending
+      const payload = {
+        name: formData.fullName || formData.name || '',
+        nic: formData.nic || '',
+        email: formData.email || '',
+        phoneNumber: formData.phoneNumber || formData.phone || '',
+        address: formData.address || '',
+        dateOfBirth: formData.dateOfBirth || formData.dob || '',
+        gender: formData.gender || '',
+        // Add other fields as needed
+      };
+      await editMember(user.memberId, payload)
       // Call the onSubmit prop if provided (for parent component handling)
       if (onSubmit) {
-        onSubmit(formData)
+        onSubmit(payload)
       }
-
       window.alert('User updated successfully!')
-      
       // Close the modal
       onClose()
     } catch (error) {

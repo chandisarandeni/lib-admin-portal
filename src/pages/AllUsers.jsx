@@ -4,33 +4,27 @@ import EditUserModal from '../components/EditUserModal'
 import { AppContext } from '../context/AppContext'
 
 // Example random members data
-const members = Array.from({ length: 30 }).map((_, i) => ({
-  id: i + 1,
-  name: `User ${i + 1}`,
-  email: `user${i + 1}@example.com`,
-  address: `${123 + i} Main Street, City ${i + 1}`,
-  books: Math.floor(Math.random() * 10) + 1,
-  role: ['Student', 'Faculty', 'Staff'][i % 3],
-  status: i % 4 === 0 ? 'Inactive' : 'Active'
-}))
+
 
 const AllUsers = () => {
   const [search, setSearch] = useState('')
-  const [members, setMembers] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const usersPerPage = 15
-  const {fetchAllMembers} = useContext(AppContext)
+  const {members, setMembers, editMember, fetchAllMembers} = useContext(AppContext)
 
   // Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
 
-  // Filter users by name, role, or email
-  const filteredUsers = members.filter(
+  // Ensure members is always an array before filtering
+  const safeMembers = Array.isArray(members) ? members : []
+
+  // Filter users by name, role, or email (safe for null values)
+  const filteredUsers = safeMembers.filter(
     user =>
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.role.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase())
+      (user.name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (user.role || '').toLowerCase().includes(search.toLowerCase()) ||
+      (user.email || '').toLowerCase().includes(search.toLowerCase())
   )
 
   // Calculate pagination
@@ -44,13 +38,6 @@ const AllUsers = () => {
     setCurrentPage(1)
   }, [search])
 
-  useEffect(() => {
-    const fetchMembers = async () => {
-      const allMembers = await fetchAllMembers()
-      setMembers(allMembers)
-    }
-    fetchMembers()
-  }, [fetchAllMembers])
 
   const handlePageChange = (page) => {
     setCurrentPage(page)
@@ -108,6 +95,17 @@ const AllUsers = () => {
     }
   }
 
+  // Handle successful edit to refresh data
+  const handleEditSuccess = async () => {
+    try {
+      await fetchAllMembers(); // Refresh the members data
+      closeEditModal();
+    } catch (error) {
+      console.error('Error refreshing members:', error);
+      closeEditModal();
+    }
+  }
+
   const navigate = useNavigate()
 
   return (
@@ -121,10 +119,7 @@ const AllUsers = () => {
               isOpen={isEditModalOpen}
               onClose={closeEditModal}
               user={selectedUser}
-              onSubmit={(updatedUser) => {
-                console.log('Updated user:', updatedUser)
-                // Handle user update logic here
-              }}
+              onSubmit={handleEditSuccess}
             />
           </div>
         </>

@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AppContext } from '../context/AppContext'
 
 const AddUser = () => {
 
@@ -9,14 +10,12 @@ const AddUser = () => {
     email: '',
     phone: '',
     address: '',
-    password: '',
     role: 'Student',
     department: '',
     studentId: '',
     employeeId: '',
     dateOfBirth: '',
     gender: '',
-    status: 'Active',
     maxBooksAllowed: '5',
     notes: ''
   })
@@ -24,6 +23,7 @@ const AddUser = () => {
   const [profileImage, setProfileImage] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [errors, setErrors] = useState({})
+  const {addMembers} = useContext(AppContext)
   const navigate = useNavigate()
 
   const handleInputChange = (e) => {
@@ -89,42 +89,69 @@ const AddUser = () => {
       newErrors.email = 'Please enter a valid email address'
     }
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required'
-    if (!formData.password.trim()) {
-      newErrors.password = 'Password is required'
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters long'
-    }
     
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     
     if (!validateForm()) {
       return
     }
 
-    // Create FormData for file upload
-    const submitData = new FormData()
-    Object.keys(formData).forEach(key => {
-      submitData.append(key, formData[key])
-    })
-    
-    if (profileImage) {
-      submitData.append('profileImage', profileImage)
-    }
+    try {
+      // Generate random password
+      const generatedPassword = generateRandomPassword()
+      
+      // Prepare member data for API
+      const memberData = {
+        name: formData.name,
+        email: formData.email,
+        phoneNumber: formData.phone,
+        address: formData.address,
+        password: generatedPassword,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        // Add other fields as needed by your API
+      }
 
-    // Handle form submission logic here
-    console.log('New user data:', formData)
-    console.log('Profile image:', profileImage)
-    
-    // Show success message (you can replace with actual API call)
-    alert('User added successfully!')
-    
-    // Navigate back to dashboard
-    
+      // Call the addMembers function from context
+      const result = await addMembers(memberData)
+      
+      console.log('Member added successfully:', result)
+      
+      // Show success message with generated password
+      alert(`User added successfully!\n\nGenerated Password: ${generatedPassword}\n\nPlease save this password and share it with the user.`)
+      
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        role: 'Student',
+        department: '',
+        studentId: '',
+        employeeId: '',
+        dateOfBirth: '',
+        gender: '',
+        maxBooksAllowed: '5',
+        notes: ''
+      })
+      
+      // Clear image
+      setProfileImage(null)
+      setImagePreview(null)
+      
+      // Navigate back to all users page
+      navigate('/dashboard/all-users')
+      
+    } catch (error) {
+      console.error('Error adding member:', error)
+      alert('Error adding user. Please try again.')
+    }
   }
 
   const removeImage = () => {
@@ -133,6 +160,16 @@ const AddUser = () => {
     // Clear file input
     const fileInput = document.getElementById('profileImage')
     if (fileInput) fileInput.value = ''
+  }
+
+  // Generate random password
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
+    let password = ''
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return password
   }
 
   return (
@@ -220,6 +257,19 @@ const AddUser = () => {
             {/* Personal Information */}
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Personal Information</h2>
+              
+              {/* Password Generation Notice */}
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm text-blue-700 font-medium">
+                    A secure password will be automatically generated for this user upon registration.
+                  </span>
+                </div>
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Name */}
                 <div>
@@ -278,25 +328,6 @@ const AddUser = () => {
                   {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
                 </div>
 
-                {/* Password */}
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                    Password *
-                  </label>
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                      errors.password ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="Enter password"
-                  />
-                  {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
-                </div>
-
                 {/* Date of Birth */}
                 <div>
                   <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">
@@ -347,24 +378,6 @@ const AddUser = () => {
                     placeholder="Enter full address"
                   />
                 </div>
-
-                {/* Status */}
-                <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-                    Status
-                  </label>
-                  <select
-                    id="status"
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="Suspended">Suspended</option>
-                  </select>
-                </div>
               </div>
             </div>
 
@@ -372,7 +385,7 @@ const AddUser = () => {
             <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
               <button
                 type="button"
-                
+                onClick={() => navigate('/dashboard/all-users')}
                 className="px-8 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
               >
                 Cancel

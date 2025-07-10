@@ -6,7 +6,8 @@ export const AppContext = createContext()
 const ContextProvider = ({ children }) => {
 
     const[books, setBooks] = useState([])
-    const[allBooks, setAllBooks] = useState([]) // For showing all books including duplicates
+    const[allBooks, setAllBooks] = useState([]) 
+    const[members, setMembers] = useState([])// For showing all books including duplicates
     const [selectedGenre, setSelectedGenre] = useState("");
     const [selectedType, setSelectedType] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -141,14 +142,34 @@ const ContextProvider = ({ children }) => {
             const url = "http://localhost:8080/api/v1/members";
             const response = await axios.get(url);
             console.log("All members fetched:", response.data);
-            return response.data;
+            setMembers(response.data || []); // Ensure it's always an array
+            return response.data || [];
         } catch (error) {
             console.error("Error fetching all members:", error);
+            setMembers([]); // Set to empty array on error
+            return [];
+        }
+    }
+
+    const addMembers = async (newMember) => {
+        try {
+            const url = "http://localhost:8080/api/v1/members";
+            const response = await axios.post(url, newMember);
+            setMembers(prevMembers => [...prevMembers, response.data]);
+            console.log("Member added successfully:", response.data);
+            return response.data;
+        } catch (error) {
+            console.error("Error adding member:", error);
             throw error;
         }
     }
 
-        const editMember  = async (memberId, updatedData) => {
+    useEffect(() => {
+        fetchAllMembers();
+    }, [])
+
+
+            const editMember  = async (memberId, updatedData) => {
             try {
                 const url = `http://localhost:8080/api/v1/members/${memberId}`;
                 const response = await axios.put(url, updatedData);
@@ -159,11 +180,12 @@ const ContextProvider = ({ children }) => {
                 throw error;
             }
         }
-    
-    
+        
+
+
     return (
         <AppContext.Provider value={{
-            editMember,
+            
             fetchPopularBooks, 
             fetchAllBooks, 
             books, 
@@ -175,7 +197,11 @@ const ContextProvider = ({ children }) => {
             selectedType,
             setSelectedType,
             fetchIssuedBooks,
-            fetchAllMembers
+            members,
+            setMembers,
+            editMember,
+            fetchAllMembers,
+            addMembers
         }}>
             {children}
         </AppContext.Provider>
