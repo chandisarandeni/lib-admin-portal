@@ -11,7 +11,7 @@ const EditBookModal = ({ isOpen, onClose, book, onSubmit }) => {
   useEffect(() => {
     if (book) {
       setFormData({
-        title: book.title,
+        title: book.bookName,
         author: book.author,
         isbn: book.isbn,
         status: book.status
