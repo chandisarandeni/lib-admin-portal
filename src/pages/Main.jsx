@@ -2,7 +2,9 @@ import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import EditBookModal from '../components/EditBookModal'
 import EditUserModal from '../components/EditUserModal'
+import LibraryCharts from '../components/Chart'
 import { AppContext } from '../context/AppContext'
+import Chart from '../components/Chart'
 
 
 const Main = () => {
@@ -435,33 +437,13 @@ const Main = () => {
               </div>
             </div>
 
-            {/* Statistics Chart */}
-            <div className="bg-white rounded-xl shadow-sm">
-              <div className="p-5 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-800">Visitors & Borrowers Statistics</h3>
-              </div>
-              <div className="p-5">
-                <div className="h-40 flex items-end gap-2 mb-5">
-                  {[20, 45, 35, 60, 40, 55, 30, 65, 25, 50, 35, 40].map((height, index) => (
-                    <div 
-                      key={index} 
-                      className={`flex-1 rounded-t ${index % 2 === 0 ? 'bg-red-500' : 'bg-blue-500'}`}
-                      style={{ height: `${height}%`, minHeight: '20px' }}
-                    ></div>
-                  ))}
-                </div>
-                <div className="flex justify-center gap-6 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 bg-red-500 rounded"></span>
-                    <span className="text-gray-600">Visitors</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 bg-blue-500 rounded"></span>
-                    <span className="text-gray-600">Borrowers</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Library Statistics Charts */}
+            <LibraryCharts 
+              books={books}
+              members={members}
+              currentlyBorrowedBooks={currentlyBorrowedBooks}
+              overdueBooks={overdueBooks}
+            />
           </div>
         </div>
       </div>
