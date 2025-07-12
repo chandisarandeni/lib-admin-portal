@@ -12,6 +12,7 @@ const ContextProvider = ({ children }) => {
     const [selectedType, setSelectedType] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const lastFetchParams = useRef(null); // Track last fetch to prevent duplicates
+    const [librarians, setLibrarians] = useState([]);
     
 
     const [user, setUser] = useState(() => {
@@ -357,13 +358,75 @@ const ContextProvider = ({ children }) => {
         }
     }
 
-        
+    // Function to fetch all librarians
+    const getAllLibrarians = async () => {
+        try {
+            const url = "http://localhost:8080/api/v1/librarians";
+            const response = await axios.get(url);
+            console.log("All librarians fetched:", response.data);
+            setLibrarians(response.data || []);
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching all librarians:", error);
+            return [];
+        }
+    }
 
+    const addLibrarian = async (newLibrarian) => {
+        try {
+            const url = "http://localhost:8080/api/v1/librarians";
+            const response = await axios.post(url, newLibrarian);
+            console.log("Librarian added successfully:", response.data);
+            
+            // Refresh the librarians list after successful addition
+            await getAllLibrarians();
+            
+            return response.data;
+        } catch (error) {
+            console.error("Error adding librarian:", error);
+            throw error;
+        }
+    }
+
+    useEffect(() => {
+        getAllLibrarians();
+    }, []);
+
+        const editLibrarian = async (librarianId, updatedData) => {
+            try {
+                const url = `http://localhost:8080/api/v1/librarians/${librarianId}`;
+                const response = await axios.put(url, updatedData);
+                console.log("Librarian updated successfully:", response.data);
+                
+                // Refresh the librarians list after successful update
+                await getAllLibrarians();
+                
+                return response.data;
+            } catch (error) {
+                console.error("Error updating librarian:", error);
+                throw error;
+            }
+        }
+
+        const deleteLibrarian = async (librarianId) => {
+            try {
+                const url = `http://localhost:8080/api/v1/librarians/${librarianId}`;
+                await axios.delete(url);
+                console.log("Librarian deleted successfully:", librarianId);
+                
+                // Refresh the librarians list after successful deletion
+                await getAllLibrarians();
+                
+                return true; // Indicate success
+            } catch (error) {
+                console.error("Error deleting librarian:", error);
+                throw error;
+            }
+        }
 
     return (
         <AppContext.Provider value={{
-            
-            fetchPopularBooks, 
+            fetchPopularBooks,
             fetchAllBooks, 
             books, 
             allBooks, 
@@ -384,7 +447,11 @@ const ContextProvider = ({ children }) => {
             updateBorrowings,
             user,
             login,
-            logout
+            logout,
+            addLibrarian,
+            librarians,
+            editLibrarian,
+            deleteLibrarian
         }}>
             {children}
         </AppContext.Provider>

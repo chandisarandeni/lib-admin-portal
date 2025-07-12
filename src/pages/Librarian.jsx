@@ -1,64 +1,12 @@
 import React, { useState, useContext } from 'react'
+import toast from 'react-hot-toast'
 import { AppContext } from '../context/AppContext'
 
 const Librarian = () => {
-  const context = useContext(AppContext)
-  
+  const { addLibrarian,librarians, editLibrarian, deleteLibrarian } = useContext(AppContext)
+
   // Sample librarian data - you can replace this with actual data from your API
-  const [librarians, setLibrarians] = useState([
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@library.com',
-      phone: '+1 (555) 123-4567',
-      employeeId: 'LIB001',
-      department: 'Reference',
-      joinDate: '2020-03-15',
-      status: 'Active',
-      shift: 'Morning',
-      experience: '4 years',
-      qualification: 'Masters in Library Science'
-    },
-    {
-      id: 2,
-      name: 'Michael Chen',
-      email: 'michael.chen@library.com',
-      phone: '+1 (555) 234-5678',
-      employeeId: 'LIB002',
-      department: 'Technical Services',
-      joinDate: '2019-07-22',
-      status: 'Active',
-      shift: 'Evening',
-      experience: '5 years',
-      qualification: 'Bachelor in Information Science'
-    },
-    {
-      id: 3,
-      name: 'Emily Rodriguez',
-      email: 'emily.rodriguez@library.com',
-      phone: '+1 (555) 345-6789',
-      employeeId: 'LIB003',
-      department: 'Children\'s Section',
-      joinDate: '2021-01-10',
-      status: 'Active',
-      shift: 'Morning',
-      experience: '3 years',
-      qualification: 'Masters in Education'
-    },
-    {
-      id: 4,
-      name: 'David Thompson',
-      email: 'david.thompson@library.com',
-      phone: '+1 (555) 456-7890',
-      employeeId: 'LIB004',
-      department: 'Administration',
-      joinDate: '2018-05-30',
-      status: 'On Leave',
-      shift: 'Full Time',
-      experience: '6 years',
-      qualification: 'MBA in Management'
-    }
-  ])
+  
 
   // Modal and editing states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -68,6 +16,7 @@ const Librarian = () => {
   const [addFormData, setAddFormData] = useState({})
   const [errors, setErrors] = useState({})
   const [addErrors, setAddErrors] = useState({})
+  const [isAddingLibrarian, setIsAddingLibrarian] = useState(false)
 
   // Search and pagination
   const [search, setSearch] = useState('')
@@ -78,7 +27,7 @@ const Librarian = () => {
   const filteredLibrarians = librarians.filter(librarian =>
     librarian.name.toLowerCase().includes(search.toLowerCase()) ||
     librarian.email.toLowerCase().includes(search.toLowerCase()) ||
-    librarian.employeeId.toLowerCase().includes(search.toLowerCase())
+    librarian.librarianId?.toString().toLowerCase().includes(search.toLowerCase())
   )
 
   // Calculate pagination
@@ -95,7 +44,10 @@ const Librarian = () => {
   // Modal handlers
   const openEditModal = (librarian) => {
     setSelectedLibrarian(librarian)
-    setEditFormData({ ...librarian })
+    setEditFormData({ 
+      ...librarian,
+      phone: librarian.phoneNumber // Convert phoneNumber to phone for form handling
+    })
     setIsEditModalOpen(true)
   }
 
@@ -106,17 +58,27 @@ const Librarian = () => {
     setErrors({})
   }
 
+  // Function to generate random password
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%'
+    let password = ''
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return password
+  }
+
   const openAddModal = () => {
     setAddFormData({
       name: '',
       email: '',
       phone: '',
-      employeeId: '',
+      nic: '',
+      address: '',
       joinDate: '',
-      status: 'Active',
       shift: 'Morning',
       experience: '',
-      qualification: ''
+      password: generateRandomPassword()
     })
     setIsAddModalOpen(true)
   }
@@ -164,7 +126,7 @@ const Librarian = () => {
     if (!editFormData.name?.trim()) newErrors.name = 'Name is required'
     if (!editFormData.email?.trim()) newErrors.email = 'Email is required'
     if (!editFormData.phone?.trim()) newErrors.phone = 'Phone is required'
-    if (!editFormData.employeeId?.trim()) newErrors.employeeId = 'Employee ID is required'
+    if (!editFormData.address?.trim()) newErrors.address = 'Address is required'
     
     // Email validation
     if (editFormData.email && !/\S+@\S+\.\S+/.test(editFormData.email)) {
@@ -181,16 +143,12 @@ const Librarian = () => {
     if (!addFormData.name?.trim()) newErrors.name = 'Name is required'
     if (!addFormData.email?.trim()) newErrors.email = 'Email is required'
     if (!addFormData.phone?.trim()) newErrors.phone = 'Phone is required'
-    if (!addFormData.employeeId?.trim()) newErrors.employeeId = 'Employee ID is required'
+    if (!addFormData.nic?.trim()) newErrors.nic = 'NIC is required'
+    if (!addFormData.address?.trim()) newErrors.address = 'Address is required'
     
     // Email validation
     if (addFormData.email && !/\S+@\S+\.\S+/.test(addFormData.email)) {
       newErrors.email = 'Please enter a valid email'
-    }
-    
-    // Check if employee ID already exists
-    if (addFormData.employeeId && librarians.some(lib => lib.employeeId === addFormData.employeeId)) {
-      newErrors.employeeId = 'Employee ID already exists'
     }
     
     // Check if email already exists
@@ -198,50 +156,132 @@ const Librarian = () => {
       newErrors.email = 'Email already exists'
     }
     
+    // NIC validation (basic length check)
+    if (addFormData.nic && addFormData.nic.length < 10) {
+      newErrors.nic = 'NIC must be at least 10 characters'
+    }
+    
     setAddErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     
     if (!validateForm()) {
       return
     }
 
-    // Update librarian in the list
-    setLibrarians(prev => 
-      prev.map(lib => 
-        lib.id === selectedLibrarian.id 
-          ? { ...editFormData }
-          : lib
-      )
-    )
+    try {
+      // Prepare updated data for API - convert phone back to phoneNumber
+      const updatedData = {
+        name: editFormData.name,
+        email: editFormData.email,
+        phoneNumber: editFormData.phone, // Backend expects 'phoneNumber' not 'phone'
+        address: editFormData.address,
+        status: editFormData.status,
+        shift: editFormData.shift,
+        experience: editFormData.experience,
+        joinDate: editFormData.joinDate
+      }
 
-    alert('Librarian details updated successfully!')
-    closeEditModal()
+      // Debug: Log the data being sent to API
+      console.log('Updating librarian with ID:', selectedLibrarian.librarianId)
+      console.log('Update data:', updatedData)
+
+      // Call the API to update librarian
+      const result = await editLibrarian(selectedLibrarian.librarianId, updatedData)
+
+      // Debug: Log the response from API
+      console.log('API response:', result)
+      
+      if (result) {
+        toast.success('Librarian details updated successfully!')
+        closeEditModal()
+        // Note: The AppContext should handle updating the librarians list
+      } else {
+        toast.error('Failed to update librarian. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error updating librarian:', error)
+      toast.error('Error updating librarian. Please try again.')
+    }
   }
 
-  const handleAddSubmit = (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault()
     
     if (!validateAddForm()) {
       return
     }
 
-    // Generate new ID
-    const newId = Math.max(...librarians.map(lib => lib.id)) + 1
+    setIsAddingLibrarian(true)
 
-    // Add new librarian to the list
-    const newLibrarian = {
-      ...addFormData,
-      id: newId
+    try {
+      // Prepare librarian data for API (employeeId will be auto-generated by backend)
+      const newLibrarianData = {
+        name: addFormData.name,
+        email: addFormData.email,
+        phoneNumber: addFormData.phone, // Backend expects 'phoneNumber' not 'phone'
+        nic: addFormData.nic,
+        address: addFormData.address,
+        shift: addFormData.shift || 'Morning',
+        experience: addFormData.experience || '',
+        joinDate: addFormData.joinDate || '',
+        password: addFormData.password, // Include the generated password
+        status: 'Active', // Default status
+        qualification: '' // Default empty qualification
+      }
+
+      // Debug: Log the data being sent to API
+      console.log('Sending librarian data to API:', newLibrarianData)
+
+      // Call the API to add librarian
+      const result = await addLibrarian(newLibrarianData)
+      
+      // Debug: Log the response from API
+      console.log('API response:', result)
+      
+      if (result) {
+        toast.success('New librarian added successfully!')
+        closeAddModal()
+        // Note: The AppContext should handle updating the librarians list
+      } else {
+        toast.error('Failed to add librarian. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error adding librarian:', error)
+      toast.error('Error adding librarian. Please try again.')
+    } finally {
+      setIsAddingLibrarian(false)
     }
+  }
 
-    setLibrarians(prev => [...prev, newLibrarian])
+  const handleDeleteLibrarian = async (librarianId) => {
+    if (window.confirm('Are you sure you want to delete this librarian? This action cannot be undone.')) {
+      try {
+        // Debug: Log the ID being sent to API
+        console.log('Deleting librarian with ID:', librarianId)
 
-    alert('New librarian added successfully!')
-    closeAddModal()
+        // Call the API to delete librarian
+        const result = await deleteLibrarian(librarianId)
+        
+        // Debug: Log the response from API
+        console.log('Delete API response:', result)
+        
+        // For DELETE operations, success might return null, undefined, or true
+        // Check if the operation didn't explicitly fail
+        if (result !== false) {
+          toast.success('Librarian deleted successfully!')
+          // Note: The AppContext should handle updating the librarians list
+        } else {
+          toast.error('Failed to delete librarian. Please try again.')
+        }
+      } catch (error) {
+        console.error('Error deleting librarian:', error)
+        toast.error('Error deleting librarian. Please try again.')
+      }
+    }
   }
 
   const handlePageChange = (page) => {
@@ -284,9 +324,7 @@ const Librarian = () => {
   }
 
   // Safety check for context
-  if (!context) {
-    return <div className="p-6">Loading...</div>
-  }
+  
 
   return (
     <div className="relative">
@@ -330,25 +368,6 @@ const Librarian = () => {
                       {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
                     </div>
 
-                    {/* Employee ID */}
-                    <div>
-                      <label htmlFor="employeeId" className="block text-sm font-medium text-gray-700 mb-1">
-                        Employee ID *
-                      </label>
-                      <input
-                        type="text"
-                        id="employeeId"
-                        name="employeeId"
-                        value={editFormData.employeeId || ''}
-                        onChange={handleInputChange}
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                          errors.employeeId ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        placeholder="Enter employee ID"
-                      />
-                      {errors.employeeId && <p className="mt-1 text-sm text-red-600">{errors.employeeId}</p>}
-                    </div>
-
                     {/* Email */}
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -385,6 +404,25 @@ const Librarian = () => {
                         placeholder="Enter phone number"
                       />
                       {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
+                    </div>
+
+                    {/* Address */}
+                    <div className="md:col-span-2">
+                      <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                        Address *
+                      </label>
+                      <textarea
+                        id="address"
+                        name="address"
+                        value={editFormData.address || ''}
+                        onChange={handleInputChange}
+                        rows={3}
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                          errors.address ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter full address"
+                      />
+                      {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
                     </div>
 
                     {/* Status */}
@@ -454,22 +492,6 @@ const Librarian = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                       />
                     </div>
-
-                    {/* Qualification */}
-                    <div className="md:col-span-2">
-                      <label htmlFor="qualification" className="block text-sm font-medium text-gray-700 mb-1">
-                        Qualification
-                      </label>
-                      <input
-                        type="text"
-                        id="qualification"
-                        name="qualification"
-                        value={editFormData.qualification || ''}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                        placeholder="e.g., Masters in Library Science"
-                      />
-                    </div>
                   </div>
 
                   {/* Form Actions */}
@@ -527,31 +549,13 @@ const Librarian = () => {
                         name="name"
                         value={addFormData.name || ''}
                         onChange={handleAddInputChange}
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                        disabled={isAddingLibrarian}
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                           addErrors.name ? 'border-red-500' : 'border-gray-300'
                         }`}
                         placeholder="Enter full name"
                       />
                       {addErrors.name && <p className="mt-1 text-sm text-red-600">{addErrors.name}</p>}
-                    </div>
-
-                    {/* Employee ID */}
-                    <div>
-                      <label htmlFor="add-employeeId" className="block text-sm font-medium text-gray-700 mb-1">
-                        Employee ID *
-                      </label>
-                      <input
-                        type="text"
-                        id="add-employeeId"
-                        name="employeeId"
-                        value={addFormData.employeeId || ''}
-                        onChange={handleAddInputChange}
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                          addErrors.employeeId ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        placeholder="Enter employee ID"
-                      />
-                      {addErrors.employeeId && <p className="mt-1 text-sm text-red-600">{addErrors.employeeId}</p>}
                     </div>
 
                     {/* Email */}
@@ -592,22 +596,42 @@ const Librarian = () => {
                       {addErrors.phone && <p className="mt-1 text-sm text-red-600">{addErrors.phone}</p>}
                     </div>
 
-                    {/* Status */}
+                    {/* NIC */}
                     <div>
-                      <label htmlFor="add-status" className="block text-sm font-medium text-gray-700 mb-1">
-                        Status
+                      <label htmlFor="add-nic" className="block text-sm font-medium text-gray-700 mb-1">
+                        NIC *
                       </label>
-                      <select
-                        id="add-status"
-                        name="status"
-                        value={addFormData.status || 'Active'}
+                      <input
+                        type="text"
+                        id="add-nic"
+                        name="nic"
+                        value={addFormData.nic || ''}
                         onChange={handleAddInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                      >
-                        <option value="Active">Active</option>
-                        <option value="On Leave">On Leave</option>
-                        <option value="Inactive">Inactive</option>
-                      </select>
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                          addErrors.nic ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter NIC number"
+                      />
+                      {addErrors.nic && <p className="mt-1 text-sm text-red-600">{addErrors.nic}</p>}
+                    </div>
+
+                    {/* Address */}
+                    <div className="md:col-span-2">
+                      <label htmlFor="add-address" className="block text-sm font-medium text-gray-700 mb-1">
+                        Address *
+                      </label>
+                      <textarea
+                        id="add-address"
+                        name="address"
+                        value={addFormData.address || ''}
+                        onChange={handleAddInputChange}
+                        rows={3}
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                          addErrors.address ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter full address"
+                      />
+                      {addErrors.address && <p className="mt-1 text-sm text-red-600">{addErrors.address}</p>}
                     </div>
 
                     {/* Shift */}
@@ -660,20 +684,30 @@ const Librarian = () => {
                       />
                     </div>
 
-                    {/* Qualification */}
+                    {/* Auto-generated Password */}
                     <div className="md:col-span-2">
-                      <label htmlFor="add-qualification" className="block text-sm font-medium text-gray-700 mb-1">
-                        Qualification
+                      <label htmlFor="add-password" className="block text-sm font-medium text-gray-700 mb-1">
+                        Generated Password
                       </label>
-                      <input
-                        type="text"
-                        id="add-qualification"
-                        name="qualification"
-                        value={addFormData.qualification || ''}
-                        onChange={handleAddInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                        placeholder="e.g., Masters in Library Science"
-                      />
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          id="add-password"
+                          name="password"
+                          value={addFormData.password || ''}
+                          readOnly
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none"
+                          placeholder="Auto-generated password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setAddFormData(prev => ({ ...prev, password: generateRandomPassword() }))}
+                          className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                        >
+                          Regenerate
+                        </button>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">This password will be used for the librarian's initial login</p>
                     </div>
                   </div>
 
@@ -688,9 +722,10 @@ const Librarian = () => {
                     </button>
                     <button
                       type="submit"
-                      className="px-6 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors"
+                      disabled={isAddingLibrarian}
+                      className="px-6 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Add Librarian
+                      {isAddingLibrarian ? 'Adding...' : 'Add Librarian'}
                     </button>
                   </div>
                 </form>
@@ -706,7 +741,7 @@ const Librarian = () => {
           <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
-              placeholder="Search by name, email, or employee ID..."
+              placeholder="Search by name, email, or librarian ID..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors w-full sm:w-80"
@@ -729,19 +764,18 @@ const Librarian = () => {
           <table className="w-full bg-white rounded-lg shadow-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Librarian ID</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shift</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Experience</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {currentLibrarians.map(librarian => (
-                <tr key={librarian.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-sm text-gray-900 font-medium">{librarian.employeeId}</td>
+                <tr key={librarian.librarianId} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-sm text-gray-900 font-medium">{librarian.librarianId}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">
                     <div>
                       <div className="font-medium">{librarian.name}</div>
@@ -751,35 +785,32 @@ const Librarian = () => {
                   <td className="px-4 py-3 text-sm text-gray-900">
                     <div>
                       <div>{librarian.email}</div>
-                      <div className="text-gray-500 text-xs">{librarian.phone}</div>
+                      <div className="text-gray-500 text-xs">{librarian.phoneNumber}</div>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900">{librarian.shift}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{librarian.experience}</td>
                   <td className="px-4 py-3 text-sm">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
-                      librarian.status === 'Active'
-                        ? 'bg-green-100 text-green-800'
-                        : librarian.status === 'On Leave'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {librarian.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <button
-                      className="border border-gray-300 px-3 py-1 rounded text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-                      onClick={() => openEditModal(librarian)}
-                    >
-                      Edit
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        className="border border-gray-300 px-3 py-1 rounded text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+                        onClick={() => openEditModal(librarian)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="border border-red-300 px-3 py-1 rounded text-xs text-red-600 hover:bg-red-50 transition-colors"
+                        onClick={() => handleDeleteLibrarian(librarian.librarianId)}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
               {currentLibrarians.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-gray-400">No librarians found.</td>
+                  <td colSpan={6} className="text-center py-8 text-gray-400">No librarians found.</td>
                 </tr>
               )}
             </tbody>
