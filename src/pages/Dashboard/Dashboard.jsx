@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 
 import { Route, Routes, Link, NavLink } from "react-router-dom";
 import { LuLayoutDashboard } from "react-icons/lu";
@@ -18,6 +18,7 @@ import { assets } from "../../assets/assests";
 import Borrow from "../Borrow";
 import { SiBookstack } from "react-icons/si";
 import Librarian from "../Librarian";
+import { AppContext } from "../../context/AppContext";
 
 
 const Dashboard = () => {
@@ -26,12 +27,14 @@ const Dashboard = () => {
   const sidebarLinks = [
     { name: "Dashboard", path: "/dashboard", icon: <LuLayoutDashboard /> },
     { name: "Books", path: "/dashboard/all-books", icon: <RiBookShelfFill /> },
-    { name: "Members", path: "/dashboard/all-users", icon: <FaRegUser /> },
+    { name: "Borrowed Books", path: "/dashboard/borrowed-books", icon: <SiBookstack /> },  
     { name: "Overdue Books", path: "/dashboard/overdue-books", icon: <FaRegCalendarTimes /> },
-    { name: "profile", path: "/dashboard/profile", icon: <ImProfile /> },
-    {name: "Borrowed Books", path: "/dashboard/borrowed-books", icon: <SiBookstack />},
-    {name: "Librarians", path: "/dashboard/librarians", icon: <FaRegUser />},
+    { name: "Members", path: "/dashboard/all-users", icon: <FaRegUser /> },
+    { name: "Librarians", path: "/dashboard/librarians", icon: <FaRegUser /> },
+    { name: "Profile", path: "/dashboard/profile", icon: <ImProfile /> }
   ];
+
+  const {user} = useContext(AppContext)
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -75,6 +78,10 @@ const Dashboard = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
+         <p className="text-gray-700 text-sm">
+            Welcome back, <span className="font-semibold text-[#8E552C]">{user?.email || 'User'}</span>! 
+            {user?.email && <span className="text-gray-500 ml-2">Logged in successfully</span>}
+          </p>
         {/* Top Header for larger screens */}
         <div className="flex items-center justify-between px-4 md:px-8 border-b border-gray-300 py-3 bg-[#8E552C]">
           <div></div>

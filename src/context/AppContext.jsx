@@ -13,6 +13,58 @@ const ContextProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(false);
     const lastFetchParams = useRef(null); // Track last fetch to prevent duplicates
     
+
+    const [user, setUser] = useState(() => {
+        const savedUser = localStorage.getItem("user");
+        return savedUser ? JSON.parse(savedUser) : null;
+    })
+    const [isAuthenticated, setIsAuthenticated] = useState(() => {
+        return localStorage.getItem("isAuthenticated") === "true";
+    });
+
+    // Login function
+    const login = async (email, password) => {
+        try {
+            const response = await axios.post("http://localhost:8080/api/v1/members/auth/login", {
+                email,
+                password
+            });
+            
+            if (response.data === true) {
+                // Create user object with email
+                const userData = { email };
+                
+                // Update state
+                setUser(userData);
+                setIsAuthenticated(true);
+                
+                // Store in localStorage
+                localStorage.setItem('user', JSON.stringify(userData));
+                localStorage.setItem('isAuthenticated', 'true');
+                
+                return { success: true, message: "Login successful" };
+            } else {
+                return { success: false, message: "Invalid credentials" };
+            }
+        } catch (error) {
+            console.error("Login error:", error);
+            return { 
+                success: false, 
+                message: error.response?.data?.message || "Login failed" 
+            };
+        }
+    };
+
+    // Logout function
+    const logout = () => {
+        setUser(null);
+        setIsAuthenticated(false);
+        
+        // Clear localStorage
+        localStorage.removeItem('user');
+        localStorage.removeItem('isAuthenticated');
+    };
+
     const fetchPopularBooks = async () => {
         try {
             const url = "http://localhost:8080/api/v1/books/popular";
@@ -329,7 +381,10 @@ const ContextProvider = ({ children }) => {
             addMembers,
             deleteMember,
             deleteBook,
-            updateBorrowings
+            updateBorrowings,
+            user,
+            login,
+            logout
         }}>
             {children}
         </AppContext.Provider>
