@@ -8,29 +8,89 @@ import { AppContext } from '../context/AppContext'
 const Main = () => {
 
   const navigate = useNavigate()
-  const {fetchPopularBooks, books,fetchAllMembers} = useContext(AppContext)
+  const {fetchPopularBooks, books,fetchAllMembers, fetchIssuedBooks} = useContext(AppContext)
   const [topChoices, setTopChoices] = useState([])
   const [members, setMembers] = useState([])
+  const [issuedBooks, setIssuedBooks] = useState([])
 
   useEffect(() => {
     fetchPopularBooks()
       .then(data => {
         setTopChoices(data)
       })
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchAllMembers()
     .then(data => {
       setMembers(data)
     })
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchIssuedBooks()
+      .then(data => {
+        setIssuedBooks(data)
+        console.log('Issued Books:', data)
+      })
+      .catch(error => {
+        console.error('Error fetching issued books:', error)
+      })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Calculate overdue books from issued books
+  const calculateOverdueBooks = () => {
+    const today = new Date();
+    
+    return issuedBooks.filter(book => {
+      // Step 1: Check if book is returned - if yes, don't show it
+      if (book.returnStatus === 'Returned' || book.returnStatus === 'returned' || book.returnStatus === 'RETURNED' || book.returnStatus === 'return') {
+        console.log(`Book ${book.bookId} is already returned with status: ${book.returnStatus}`);
+        return false;
+      }
+      
+      // Step 2: Check if book is not returned AND return day has passed
+      if (!book.returnDate) return false;
+      
+      const returnDate = new Date(book.returnDate);
+      const isOverdue = returnDate < today;
+      
+      if (isOverdue) {
+        console.log(`Book ${book.bookId} is overdue. Due: ${book.returnDate}, Status: ${book.returnStatus}`);
+      }
+      
+      return isOverdue; // Return day has passed
+      
+    }).map(book => {
+      // Calculate fine for overdue books
+      const returnDate = new Date(book.returnDate);
+      const today = new Date();
+      const daysPastDue = Math.ceil((today - returnDate) / (1000 * 60 * 60 * 24));
+      const fine = daysPastDue * 5; // $5 per day
+      
+      return {
+        ...book,
+        daysPastDue,
+        fine: `$${fine.toFixed(2)}`
+      };
+    });
+  };
+
+  // Calculate currently borrowed books (not returned)
+  const currentlyBorrowedBooks = issuedBooks.filter(book => 
+    book.returnStatus !== 'Returned' && 
+    book.returnStatus !== 'returned' && 
+    book.returnStatus !== 'RETURNED' && 
+    book.returnStatus !== 'return'
+  );
+
+  const overdueBooks = calculateOverdueBooks();
 
   const statsData = [
     { title: 'Total Visitors', value: '1223', trend: '+12', color: 'red' },
-    { title: 'Borrowed Books', value: '740', trend: '+25', color: 'red' },
-    { title: 'Overdue Books', value: '22', trend: '+6', color: 'red' },
-    { title: 'New Members', value: '60', trend: '+5', color: 'red' }
+    { title: 'Borrowed Books', value: currentlyBorrowedBooks.length.toString(), trend: `+${currentlyBorrowedBooks.length}`, color: 'red' },
+    { title: 'Overdue Books', value: overdueBooks.length.toString(), trend: `+${overdueBooks.length}`, color: 'red' },
+    { title: 'New Members', value: members.length.toString(), trend: `+${members.length}`, color: 'red' }
   ]
 
  
@@ -38,18 +98,6 @@ const Main = () => {
 
 
   
-
-  const overdueBooks = [
-    { id: 1, user: 'John Doe', book: 'React Guide', dueDate: '2023-06-15', fine: '$5.00' },
-    { id: 2, user: 'Mike Johnson', book: 'CSS Mastery', dueDate: '2023-06-10', fine: '$8.50' },
-    { id: 3, user: 'Sarah Wilson', book: 'HTML Basics', dueDate: '2023-06-12', fine: '$3.00' }
-  ]
-
-  const issuedBooks = [
-    { id: 1, book: 'JavaScript Pro', user: 'Jane Smith', issueDate: '2023-06-20', returnDate: '2023-07-05' },
-    { id: 2, book: 'React Guide', user: 'John Doe', issueDate: '2023-06-18', returnDate: '2023-07-03' },
-    { id: 3, book: 'CSS Mastery', user: 'Mike Johnson', issueDate: '2023-06-15', returnDate: '2023-06-30' }
-  ]
 
   // Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -72,6 +120,7 @@ const Main = () => {
   // Handle book update (you can update your books array here if needed)
   const handleEditBookSubmit = (updatedBook) => {
     // Example: update books array logic here if needed
+    console.log('Book updated:', updatedBook)
     closeEditModal()
   }
 
@@ -90,6 +139,7 @@ const Main = () => {
   // Handle user update (you can update your users array here if needed)
   const handleEditUserSubmit = (updatedUser) => {
     // Example: update users array logic here if needed
+    console.log('User updated:', updatedUser)
     closeUserEditModal()
   }
 
@@ -301,20 +351,26 @@ const Main = () => {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Book ID</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Overdue</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days Overdue</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fine</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {overdueBooks.map(item => (
-                    <tr key={item.id}>
-                      <td className="px-4 py-3 text-sm text-gray-900">#{item.id.toString().padStart(4, '0')}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{item.user}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">#{(item.id + 100).toString()}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{item.book}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">Various</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{item.dueDate}</td>
+                  {overdueBooks.slice(0, 5).map(item => (
+                    <tr key={item.id || item.bookId}>
+                      <td className="px-4 py-3 text-sm text-gray-900">#{item.memberId.toString().padStart(4, '0')}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{item.borrowerName || 'Unknown Member'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">#{item.bookId.toString().padStart(4, '0')}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{item.bookName || 'Unknown Book'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{item.author || 'Unknown Author'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {new Date(item.returnDate).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-red-600 font-semibold">
+                        {item.daysPastDue} day{item.daysPastDue !== 1 ? 's' : ''}
+                      </td>
                       <td className="px-4 py-3 text-sm">
                         <span className="px-3 py-1 rounded-full text-xs font-semibold uppercase bg-red-100 text-red-800">
                           Overdue
@@ -323,6 +379,13 @@ const Main = () => {
                       <td className="px-4 py-3 text-sm text-red-600 font-semibold">{item.fine}</td>
                     </tr>
                   ))}
+                  {overdueBooks.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="text-center py-8 text-gray-400">
+                        No overdue books found
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -336,16 +399,39 @@ const Main = () => {
                 <h3 className="text-lg font-semibold text-gray-800">Books Issued</h3>
               </div>
               <div className="p-5 space-y-4">
-                {issuedBooks.map(item => (
+                {currentlyBorrowedBooks.slice(0, 4).map(item => (
                   <div key={item.id} className="flex items-center gap-4 p-3 border-b border-gray-100 last:border-b-0">
-                    <div className="w-10 h-10 bg-blue-500 rounded-lg flex-shrink-0"></div>
+                    <div className="w-10 h-10 bg-blue-500 rounded-lg flex-shrink-0 overflow-hidden">
+                      {item.imageUrl ? (
+                        <img 
+                          src={item.imageUrl} 
+                          alt={item.bookName} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="w-full h-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold"
+                        style={{ display: item.imageUrl ? 'none' : 'flex' }}
+                      >
+                        📚
+                      </div>
+                    </div>
                     <div className="flex-1">
-                      <h4 className="text-sm font-semibold text-gray-800">{item.book}</h4>
-                      <p className="text-xs text-gray-500">Issued to: {item.user}</p>
-                      <p className="text-xs text-gray-500">Due: {item.returnDate}</p>
+                      <h4 className="text-sm font-semibold text-gray-800">{item.bookName || 'Unknown Book'}</h4>
+                      <p className="text-xs text-gray-500">Issued to: {item.borrowerName || 'Unknown Member'}</p>
+                      <p className="text-xs text-gray-500">Due: {item.returnDate ? new Date(item.returnDate).toLocaleDateString() : 'N/A'}</p>
                     </div>
                   </div>
                 ))}
+                {currentlyBorrowedBooks.length === 0 && (
+                  <div className="text-center py-8 text-gray-400">
+                    No books currently issued
+                  </div>
+                )}
               </div>
             </div>
 
