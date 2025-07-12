@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import BookDetails from '../components/BookDetails'
 import IssueBook from '../components/IssueBook'
 import { AppContext } from '../context/AppContext'
+import toast from 'react-hot-toast'
 
 const Borrow = () => {
   const [search, setSearch] = useState('')
@@ -18,14 +19,13 @@ const Borrow = () => {
   // Mock data for issued books (you can replace this with actual data from your API)
   const [issuedBooks, setIssuedBooks] = useState([])
 
-  const {fetchIssuedBooks, fetchAllBooks, allBooks} = useContext(AppContext)
+  const {fetchIssuedBooks, books, updateBorrowings} = useContext(AppContext)
 
   useEffect(() => {
     const fetchData = async () => {
       // Fetch both issued books and all books data
       const [issuedBooksData] = await Promise.all([
-        fetchIssuedBooks(),
-        fetchAllBooks()
+        fetchIssuedBooks()
       ])
       setIssuedBooks(issuedBooksData)
     }
@@ -34,7 +34,15 @@ const Borrow = () => {
 
   // Helper function to get book details by bookId
   const getBookDetails = (bookId) => {
-    const book = allBooks.find(book => book.bookId === bookId)
+    // Safety check for books array
+    if (!books || books.length === 0) {
+      return {
+        bookName: 'Unknown Book',
+        author: 'Unknown Author'
+      }
+    }
+    
+    const book = books.find(book => book.bookId === bookId)
     return book ? {
       bookName: book.bookName || 'Unknown Book',
       author: book.author || 'Unknown Author'
@@ -78,18 +86,37 @@ const Borrow = () => {
   const recentStartIndex = (recentPage - 1) * itemsPerPage
   const recentlyBorrowed = allRecentlyBorrowed.slice(recentStartIndex, recentStartIndex + itemsPerPage)
 
-  // Get all overdue books - books that are not returned and past due date
+  // Get all overdue books - filter books where return date has passed AND book is not returned
   const allOverdueBooks = issuedBooks.filter(book => {
-    // Check if book is still borrowed (not returned)
-    const isNotReturned = book.returnStatus !== "Returned" && book.returnStatus !== "returned"
+    // Check if book has a return date
+    if (!book.returnDate) {
+      return false
+    }
     
-    // Check if due date has passed
+    // Check if book is already returned - exclude returned books from overdue list
+    if (book.returnStatus && book.returnStatus.toLowerCase() === 'returned') {
+      return false
+    }
+    
+    // Check if return date has passed
     const today = new Date()
-    today.setHours(23, 59, 59, 999) // Set to end of today
+    today.setHours(0, 0, 0, 0)
     const dueDate = new Date(book.returnDate)
-    const isPastDue = dueDate < today
+    dueDate.setHours(0, 0, 0, 0)
     
-    return isNotReturned && isPastDue
+    const isOverdue = dueDate < today
+    
+    // Debug log to see what's happening
+    console.log(`Book ${book.bookId} Overdue Check:`, {
+      returnDate: book.returnDate,
+      returnStatus: book.returnStatus,
+      today: today.toISOString().split('T')[0],
+      dueDate: dueDate.toISOString().split('T')[0],
+      isOverdue: isOverdue,
+      isReturned: book.returnStatus?.toLowerCase() === 'returned'
+    })
+    
+    return isOverdue
   })
 
   // Pagination for overdue books
@@ -98,13 +125,23 @@ const Borrow = () => {
   const overdueBooks = allOverdueBooks.slice(overdueStartIndex, overdueStartIndex + itemsPerPage)
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'Active':
+    if (!status) return 'bg-gray-100 text-gray-800'
+    
+    const statusLower = status.toLowerCase()
+    switch (statusLower) {
+      case 'active':
+      case 'borrowed':
+      case 'issued':
         return 'bg-green-100 text-green-800'
-      case 'Overdue':
+      case 'overdue':
         return 'bg-red-100 text-red-800'
-      default:
+      case 'returned':
+      case 'completed':
+        return 'bg-blue-100 text-blue-800'
+      case 'available':
         return 'bg-gray-100 text-gray-800'
+      default:
+        return 'bg-yellow-100 text-yellow-800'
     }
   }
 
@@ -134,6 +171,60 @@ const Borrow = () => {
 
   const handleCloseIssueModal = () => {
     setIsIssueModalOpen(false)
+  }
+
+  // Handle when a book is returned from the BookDetails modal
+  const handleBookReturned = async () => {
+    try {
+      // Refresh the issued books data to reflect the change
+      const updatedIssuedBooks = await fetchIssuedBooks()
+      setIssuedBooks(updatedIssuedBooks)
+    } catch (error) {
+      console.error('Error refreshing issued books:', error)
+    }
+  }
+
+  // Handle return book functionality
+  const handleReturnBook = async (book) => {
+    // Show loading toast
+    const loadingToast = toast.loading('Returning book...')
+    
+    try {
+      // Create updated borrowing object with all existing fields but change status to "Returned"
+      const updatedBorrowing = {
+        ...book,
+        returnStatus: "Returned",
+        // Keep all other fields unchanged
+        id: book.borrowingId,
+        bookId: book.bookId,
+        memberId: book.memberId,
+        borrowerName: book.borrowerName,
+        borrowerEmail: book.borrowerEmail,
+        borrowingDate: book.borrowingDate,
+        returnDate: book.returnDate
+      }
+
+      // Call updateBorrowings function with borrowing object and ID
+      await updateBorrowings(updatedBorrowing, book.borrowingId)
+
+      // Refresh the issued books data to reflect the change
+      const updatedIssuedBooks = await fetchIssuedBooks()
+      setIssuedBooks(updatedIssuedBooks)
+      
+      // Show success toast
+      toast.success(`Book ${book.bookId} returned successfully!`, {
+        id: loadingToast
+      })
+      
+      console.log(`Book ${book.bookId} returned successfully`)
+    } catch (error) {
+      console.error('Error returning book:', error)
+      
+      // Show error toast
+      toast.error('Failed to return book. Please try again.', {
+        id: loadingToast
+      })
+    }
   }
 
   // Pagination component
@@ -236,7 +327,7 @@ const Borrow = () => {
               {paginatedIssuedBooks.map(book => {
                 const bookDetails = getBookDetails(book.bookId)
                 return (
-                <tr key={book.id} className="hover:bg-gray-50">
+                <tr key={book.bookId} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="font-medium text-gray-900 text-lg">#{book.bookId}</div>
                   </td>
@@ -264,7 +355,16 @@ const Borrow = () => {
                   </td>
                   <td className="px-6 py-4 text-sm">
                     <div className="flex gap-2">
-                      <button className="text-blue-600 hover:text-blue-800 font-medium">Return</button>
+                      {book.returnStatus?.toLowerCase() === 'returned' ? (
+                        <span className="text-gray-400 font-medium">Returned</span>
+                      ) : (
+                        <button 
+                          onClick={() => handleReturnBook(book)}
+                          className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                        >
+                          Return
+                        </button>
+                      )}
                       <button className="text-green-600 hover:text-green-800 font-medium">Renew</button>
                       <button 
                         onClick={() => handleViewDetails(book)}
@@ -386,6 +486,7 @@ const Borrow = () => {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         book={selectedBook}
+        onBookReturned={handleBookReturned}
       />
 
       {/* IssueBook Modal */}

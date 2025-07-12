@@ -125,17 +125,7 @@ const ContextProvider = ({ children }) => {
         }
     }
 
-    const fetchIssuedBooks = async () => {
-        try {
-            const url = "http://localhost:8080/api/v1/borrowings";
-            const response = await axios.get(url);
-            console.log("Issued books fetched:", response.data);
-            return response.data;
-        } catch (error) {
-            console.error("Error fetching issued books:", error);
-            throw error;
-        }
-    }
+ 
 
     const deleteBook = async (bookId) => {
         try {
@@ -204,6 +194,117 @@ const ContextProvider = ({ children }) => {
                 throw error;
             }
         }
+
+        const fetchIssuedBooks = async () => {
+        try {
+            const url = "http://localhost:8080/api/v1/borrowings";
+            const response = await axios.get(url);
+            console.log("Issued books fetched:", response.data);
+            
+            // Fetch member and book details for each borrowing
+            const borrowingsWithFullDetails = await Promise.all(
+                response.data.map(async (borrowing) => {
+                    try {
+                        // Fetch both member and book details in parallel
+                        const [memberResponse, bookResponse] = await Promise.all([
+                            axios.get(`http://localhost:8080/api/v1/members/${borrowing.memberId}`),
+                            axios.get(`http://localhost:8080/api/v1/books/${borrowing.bookId}`)
+                        ]);
+
+                        return {
+                            ...borrowing,
+                            memberDetails: memberResponse.data,
+                            borrowerName: memberResponse.data.name,
+                            borrowerEmail: memberResponse.data.email,
+                            borrowerPhone: memberResponse.data.phoneNumber,
+                            borrowerAddress: memberResponse.data.address,
+                            bookDetails: bookResponse.data,
+                            bookName: bookResponse.data.bookName,
+                            author: bookResponse.data.author,
+                            isbn: bookResponse.data.isbn,
+                            genre: bookResponse.data.genre,
+                            imageUrl: bookResponse.data.imageUrl
+                        };
+                    } catch (error) {
+                        console.error(`Error fetching details for borrowing ID ${borrowing.id}:`, error);
+                        
+                        // Handle member details fetch failure
+                        let memberData = {
+                            memberDetails: null,
+                            borrowerName: 'Unknown Member',
+                            borrowerEmail: 'N/A',
+                            borrowerPhone: 'N/A',
+                            borrowerAddress: 'N/A'
+                        };
+
+                        // Handle book details fetch failure
+                        let bookData = {
+                            bookDetails: null,
+                            bookName: 'Unknown Book',
+                            author: 'Unknown Author',
+                            isbn: 'N/A',
+                            genre: 'N/A',
+                            imageUrl: null
+                        };
+
+                        // Try to fetch member details individually if parallel fetch failed
+                        try {
+                            const memberResponse = await axios.get(`http://localhost:8080/api/v1/members/${borrowing.memberId}`);
+                            memberData = {
+                                memberDetails: memberResponse.data,
+                                borrowerName: memberResponse.data.name,
+                                borrowerEmail: memberResponse.data.email,
+                                borrowerPhone: memberResponse.data.phoneNumber,
+                                borrowerAddress: memberResponse.data.address
+                            };
+                        } catch (memberError) {
+                            console.error(`Error fetching member details for ID ${borrowing.memberId}:`, memberError);
+                        }
+
+                        // Try to fetch book details individually if parallel fetch failed
+                        try {
+                            const bookResponse = await axios.get(`http://localhost:8080/api/v1/books/${borrowing.bookId}`);
+                            bookData = {
+                                bookDetails: bookResponse.data,
+                                bookName: bookResponse.data.bookName,
+                                author: bookResponse.data.author,
+                                isbn: bookResponse.data.isbn,
+                                genre: bookResponse.data.genre,
+                                imageUrl: bookResponse.data.imageUrl
+                            };
+                        } catch (bookError) {
+                            console.error(`Error fetching book details for ID ${borrowing.bookId}:`, bookError);
+                        }
+
+                        return {
+                            ...borrowing,
+                            ...memberData,
+                            ...bookData
+                        };
+                    }
+                })
+            );
+            
+            console.log("Issued books with full details:", borrowingsWithFullDetails);
+            return borrowingsWithFullDetails;
+        } catch (error) {
+            console.error("Error fetching issued books:", error);
+            throw error;
+        }
+    }
+
+    const updateBorrowings = async (borrowing, id) => {
+        try {
+            const url = `http://localhost:8080/api/v1/borrowings/${id}`;
+            const response = await axios.put(url, borrowing);
+            console.log("Borrowings updated successfully:", response.data);
+            return response.data;
+        } catch (error) {
+            console.error("Error updating borrowings:", error);
+            throw error;
+        }
+    }
+
         
 
 
@@ -227,7 +328,8 @@ const ContextProvider = ({ children }) => {
             fetchAllMembers,
             addMembers,
             deleteMember,
-            deleteBook
+            deleteBook,
+            updateBorrowings
         }}>
             {children}
         </AppContext.Provider>
