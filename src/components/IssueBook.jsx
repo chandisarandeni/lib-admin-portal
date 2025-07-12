@@ -1,44 +1,36 @@
-import React, { useState } from 'react'
+import React, { useState, useContext, useEffect, useRef } from 'react'
+import toast from 'react-hot-toast'
+import { AppContext } from '../context/AppContext'
 
-const IssueBook = ({ isOpen, onClose }) => {
+const IssueBook = ({ isOpen, onClose, books = [], members = [], onBookIssued }) => {
+  const { createBorrowing, updateBook } = useContext(AppContext)
   const [bookSearch, setBookSearch] = useState('')
   const [selectedBook, setSelectedBook] = useState(null)
   const [memberSearch, setMemberSearch] = useState('')
   const [selectedMember, setSelectedMember] = useState(null)
   const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0])
   const [dueDate, setDueDate] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const submissionRef = useRef(false) // Additional safeguard against double submission
 
-  // Mock data for available books
-  const availableBooks = [
-    { id: 1, title: "The Hobbit", author: "J.R.R. Tolkien", isbn: "978-0547928227", available: 3 },
-    { id: 2, title: "Dune", author: "Frank Herbert", isbn: "978-0441172719", available: 2 },
-    { id: 3, title: "Foundation", author: "Isaac Asimov", isbn: "978-0553293357", available: 1 },
-    { id: 4, title: "Neuromancer", author: "William Gibson", isbn: "978-0441569595", available: 2 },
-    { id: 5, title: "The Left Hand of Darkness", author: "Ursula K. Le Guin", isbn: "978-0441478125", available: 1 }
-  ]
-
-  // Mock data for members
-  const members = [
-    { id: 1, name: "John Smith", email: "john.smith@email.com", membershipId: "LIB001", phone: "+1234567890" },
-    { id: 2, name: "Sarah Johnson", email: "sarah.j@email.com", membershipId: "LIB002", phone: "+1234567891" },
-    { id: 3, name: "Mike Davis", email: "mike.davis@email.com", membershipId: "LIB003", phone: "+1234567892" },
-    { id: 4, name: "Emily Brown", email: "emily.b@email.com", membershipId: "LIB004", phone: "+1234567893" },
-    { id: 5, name: "Alex Wilson", email: "alex.wilson@email.com", membershipId: "LIB005", phone: "+1234567894" }
-  ]
+  // Filter available books (books that have quantity > 0 and status is Available)
+  const availableBooks = books.filter(book => 
+    book.quantity > 0 && book.availabilityStatus === 'Available'
+  )
 
   // Filter books based on search
   const filteredBooks = availableBooks.filter(book =>
-    book.title.toLowerCase().includes(bookSearch.toLowerCase()) ||
-    book.author.toLowerCase().includes(bookSearch.toLowerCase()) ||
-    book.id.toString().includes(bookSearch.toLowerCase()) ||
-    book.isbn.toLowerCase().includes(bookSearch.toLowerCase())
+    book.bookName?.toLowerCase().includes(bookSearch.toLowerCase()) ||
+    book.author?.toLowerCase().includes(bookSearch.toLowerCase()) ||
+    book.bookId?.toString().includes(bookSearch.toLowerCase()) ||
+    book.isbn?.toLowerCase().includes(bookSearch.toLowerCase())
   )
 
-  // Filter members based on search
-  const filteredMembers = members.filter(member =>
-    member.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
-    member.membershipId.toLowerCase().includes(memberSearch.toLowerCase()) ||
-    member.email.toLowerCase().includes(memberSearch.toLowerCase())
+  // Filter members based on search  
+  const filteredMembers = (members || []).filter(member =>
+    member.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+    member.memberId?.toString().includes(memberSearch.toLowerCase()) ||
+    member.email?.toLowerCase().includes(memberSearch.toLowerCase())
   )
 
   // Calculate due date (14 days from issue date)
@@ -64,28 +56,77 @@ const IssueBook = ({ isOpen, onClose }) => {
   // Handle book selection
   const handleBookSelect = (book) => {
     setSelectedBook(book)
-    setBookSearch(book.title)
+    setBookSearch(book.bookName || book.title)
   }
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Prevent double submission with both state and ref
+    if (isSubmitting || submissionRef.current) {
+      console.log('Form is already being submitted, ignoring...')
+      return
+    }
+    
     if (!selectedBook || !selectedMember || !issueDate || !dueDate) {
-      alert('Please fill in all required fields')
+      toast.error('Please fill in all required fields')
       return
     }
 
-    // Here you would typically make an API call to issue the book
-    console.log('Issuing book:', {
-      bookId: selectedBook.id,
-      memberId: selectedMember.id,
-      issueDate,
-      dueDate
-    })
+    setIsSubmitting(true)
+    submissionRef.current = true
+    const loadingToast = toast.loading('Issuing book...')
 
-    alert('Book issued successfully!')
-    handleReset()
-    onClose()
+    try {
+      // Prepare borrowing data for API
+      const borrowingData = {
+        bookId: selectedBook.bookId || selectedBook.id,
+        memberId: selectedMember.memberId || selectedMember.id,
+        borrowerName: selectedMember.name,
+        borrowerEmail: selectedMember.email,
+        borrowingDate: issueDate,
+        returnDate: dueDate,
+        returnStatus: 'Borrowed'
+      }
+
+      console.log('Issuing book with data:', borrowingData)
+
+      // Prepare book update data to change availability status and reduce quantity
+      const updatedBookData = {
+        ...selectedBook,
+        quantity: selectedBook.quantity - 1,
+        availabilityStatus: selectedBook.quantity - 1 <= 0 ? 'Borrowed' : 'Available'
+      }
+
+      console.log('Updating book data:', updatedBookData)
+      console.log('About to make API calls - createBorrowing and updateBook')
+
+      // Call API to issue book and update book status
+      const [borrowingResult, bookUpdateResult] = await Promise.all([
+        createBorrowing(borrowingData),
+        updateBook(selectedBook.bookId || selectedBook.id, updatedBookData)
+      ])
+
+      console.log('Borrowing created:', borrowingResult)
+      console.log('Book updated:', bookUpdateResult)
+
+      toast.success('Book issued successfully!', { id: loadingToast })
+      
+      // Call the callback to refresh parent data
+      if (onBookIssued) {
+        await onBookIssued()
+      }
+      
+      handleReset()
+      onClose()
+    } catch (error) {
+      console.error('Error issuing book:', error)
+      toast.error('Failed to issue book. Please try again.', { id: loadingToast })
+    } finally {
+      setIsSubmitting(false)
+      submissionRef.current = false
+    }
   }
 
   // Reset form
@@ -96,14 +137,17 @@ const IssueBook = ({ isOpen, onClose }) => {
     setSelectedMember(null)
     setIssueDate(new Date().toISOString().split('T')[0])
     setDueDate('')
+    submissionRef.current = false // Reset submission ref
   }
+
+  // Set initial due date if not set using useEffect to avoid render-time state updates
+  useEffect(() => {
+    if (!dueDate && issueDate) {
+      setDueDate(calculateDueDate(issueDate))
+    }
+  }, [issueDate, dueDate])
 
   if (!isOpen) return null
-
-  // Set initial due date if not set
-  if (!dueDate && issueDate) {
-    setDueDate(calculateDueDate(issueDate))
-  }
 
   return (
     <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -158,14 +202,15 @@ const IssueBook = ({ isOpen, onClose }) => {
                     {filteredBooks.length > 0 ? (
                       filteredBooks.map(book => (
                         <div
-                          key={book.id}
+                          key={book.bookId || book.id}
                           onClick={() => handleBookSelect(book)}
                           className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                         >
-                          <div className="font-medium text-gray-900">{book.title}</div>
+                          <div className="font-medium text-gray-900">{book.bookName || book.title}</div>
                           <div className="text-sm text-gray-600">by {book.author}</div>
-                          <div className="text-sm text-gray-600">ID: {book.id} | ISBN: {book.isbn}</div>
-                          <div className="text-sm text-green-600 font-medium">Available: {book.available} copies</div>
+                          <div className="text-sm text-gray-600">ID: {book.bookId || book.id} | ISBN: {book.isbn || 'N/A'}</div>
+                          <div className="text-sm text-green-600 font-medium">Available: {book.quantity || 1} copies</div>
+                          <div className="text-sm text-blue-600">Status: {book.availabilityStatus || 'Available'}</div>
                         </div>
                       ))
                     ) : (
@@ -178,11 +223,12 @@ const IssueBook = ({ isOpen, onClose }) => {
                 {selectedBook && (
                   <div className="bg-blue-50 p-4 rounded-lg mb-4">
                     <h4 className="font-semibold text-gray-800 mb-2">Selected Book</h4>
-                    <p className="text-gray-700"><strong>Title:</strong> {selectedBook.title}</p>
+                    <p className="text-gray-700"><strong>Title:</strong> {selectedBook.bookName || selectedBook.title}</p>
                     <p className="text-gray-700"><strong>Author:</strong> {selectedBook.author}</p>
-                    <p className="text-gray-700"><strong>ID:</strong> {selectedBook.id}</p>
-                    <p className="text-gray-700"><strong>ISBN:</strong> {selectedBook.isbn}</p>
-                    <p className="text-green-600 font-medium"><strong>Available copies:</strong> {selectedBook.available}</p>
+                    <p className="text-gray-700"><strong>ID:</strong> {selectedBook.bookId || selectedBook.id}</p>
+                    <p className="text-gray-700"><strong>ISBN:</strong> {selectedBook.isbn || 'N/A'}</p>
+                    <p className="text-green-600 font-medium"><strong>Available copies:</strong> {selectedBook.quantity || 1}</p>
+                    <p className="text-blue-600 font-medium"><strong>Status:</strong> {selectedBook.availabilityStatus || 'Available'}</p>
                     <button
                       type="button"
                       onClick={() => {
@@ -265,7 +311,7 @@ const IssueBook = ({ isOpen, onClose }) => {
                           className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                         >
                           <div className="font-medium text-gray-900">{member.name}</div>
-                          <div className="text-sm text-gray-600">ID: {member.membershipId}</div>
+                          <div className="text-sm text-gray-600">ID: {member.memberId || member.membershipId}</div>
                           <div className="text-sm text-gray-600">{member.email}</div>
                         </div>
                       ))
@@ -280,9 +326,9 @@ const IssueBook = ({ isOpen, onClose }) => {
                   <div className="bg-green-50 p-4 rounded-lg">
                     <h4 className="font-semibold text-gray-800 mb-2">Selected Member</h4>
                     <p className="text-gray-700"><strong>Name:</strong> {selectedMember.name}</p>
-                    <p className="text-gray-700"><strong>ID:</strong> {selectedMember.membershipId}</p>
+                    <p className="text-gray-700"><strong>ID:</strong> {selectedMember.memberId || selectedMember.membershipId}</p>
                     <p className="text-gray-700"><strong>Email:</strong> {selectedMember.email}</p>
-                    <p className="text-gray-700"><strong>Phone:</strong> {selectedMember.phone}</p>
+                    <p className="text-gray-700"><strong>Phone:</strong> {selectedMember.phone || selectedMember.phoneNumber || 'N/A'}</p>
                     <button
                       type="button"
                       onClick={() => {
@@ -318,9 +364,10 @@ const IssueBook = ({ isOpen, onClose }) => {
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                disabled={isSubmitting || !selectedBook || !selectedMember}
+                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Issue Book
+                {isSubmitting ? 'Issuing...' : 'Issue Book'}
               </button>
             </div>
           </div>

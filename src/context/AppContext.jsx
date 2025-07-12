@@ -26,7 +26,7 @@ const ContextProvider = ({ children }) => {
     // Login function
     const login = async (email, password) => {
         try {
-            const response = await axios.post("http://localhost:8080/api/v1/members/auth/login", {
+            const response = await axios.post("http://localhost:8080/api/v1/admins/auth/login", {
                 email,
                 password
             });
@@ -254,89 +254,37 @@ const ContextProvider = ({ children }) => {
             const response = await axios.get(url);
             console.log("Issued books fetched:", response.data);
             
-            // Fetch member and book details for each borrowing
-            const borrowingsWithFullDetails = await Promise.all(
-                response.data.map(async (borrowing) => {
-                    try {
-                        // Fetch both member and book details in parallel
-                        const [memberResponse, bookResponse] = await Promise.all([
-                            axios.get(`http://localhost:8080/api/v1/members/${borrowing.memberId}`),
-                            axios.get(`http://localhost:8080/api/v1/books/${borrowing.bookId}`)
-                        ]);
-
-                        return {
-                            ...borrowing,
-                            memberDetails: memberResponse.data,
-                            borrowerName: memberResponse.data.name,
-                            borrowerEmail: memberResponse.data.email,
-                            borrowerPhone: memberResponse.data.phoneNumber,
-                            borrowerAddress: memberResponse.data.address,
-                            bookDetails: bookResponse.data,
-                            bookName: bookResponse.data.bookName,
-                            author: bookResponse.data.author,
-                            isbn: bookResponse.data.isbn,
-                            genre: bookResponse.data.genre,
-                            imageUrl: bookResponse.data.imageUrl
-                        };
-                    } catch (error) {
-                        console.error(`Error fetching details for borrowing ID ${borrowing.id}:`, error);
-                        
-                        // Handle member details fetch failure
-                        let memberData = {
-                            memberDetails: null,
-                            borrowerName: 'Unknown Member',
-                            borrowerEmail: 'N/A',
-                            borrowerPhone: 'N/A',
-                            borrowerAddress: 'N/A'
-                        };
-
-                        // Handle book details fetch failure
-                        let bookData = {
-                            bookDetails: null,
-                            bookName: 'Unknown Book',
-                            author: 'Unknown Author',
-                            isbn: 'N/A',
-                            genre: 'N/A',
-                            imageUrl: null
-                        };
-
-                        // Try to fetch member details individually if parallel fetch failed
-                        try {
-                            const memberResponse = await axios.get(`http://localhost:8080/api/v1/members/${borrowing.memberId}`);
-                            memberData = {
-                                memberDetails: memberResponse.data,
-                                borrowerName: memberResponse.data.name,
-                                borrowerEmail: memberResponse.data.email,
-                                borrowerPhone: memberResponse.data.phoneNumber,
-                                borrowerAddress: memberResponse.data.address
-                            };
-                        } catch (memberError) {
-                            console.error(`Error fetching member details for ID ${borrowing.memberId}:`, memberError);
-                        }
-
-                        // Try to fetch book details individually if parallel fetch failed
-                        try {
-                            const bookResponse = await axios.get(`http://localhost:8080/api/v1/books/${borrowing.bookId}`);
-                            bookData = {
-                                bookDetails: bookResponse.data,
-                                bookName: bookResponse.data.bookName,
-                                author: bookResponse.data.author,
-                                isbn: bookResponse.data.isbn,
-                                genre: bookResponse.data.genre,
-                                imageUrl: bookResponse.data.imageUrl
-                            };
-                        } catch (bookError) {
-                            console.error(`Error fetching book details for ID ${borrowing.bookId}:`, bookError);
-                        }
-
-                        return {
-                            ...borrowing,
-                            ...memberData,
-                            ...bookData
-                        };
-                    }
-                })
-            );
+            // Get unique member and book IDs to reduce API calls
+            const memberIds = [...new Set(response.data.map(b => b.memberId))];
+            const bookIds = [...new Set(response.data.map(b => b.bookId))];
+            
+            // Fetch all unique members and books in parallel batches
+            const [memberDetailsMap, bookDetailsMap] = await Promise.all([
+                // Fetch members in smaller batches to prevent resource exhaustion
+                fetchMembersByIds(memberIds),
+                fetchBooksByIds(bookIds)
+            ]);
+            
+            // Map the borrowings with their details
+            const borrowingsWithFullDetails = response.data.map(borrowing => {
+                const memberDetails = memberDetailsMap[borrowing.memberId] || null;
+                const bookDetails = bookDetailsMap[borrowing.bookId] || null;
+                
+                return {
+                    ...borrowing,
+                    memberDetails,
+                    borrowerName: memberDetails?.name || 'Unknown Member',
+                    borrowerEmail: memberDetails?.email || 'N/A',
+                    borrowerPhone: memberDetails?.phoneNumber || 'N/A',
+                    borrowerAddress: memberDetails?.address || 'N/A',
+                    bookDetails,
+                    bookName: bookDetails?.bookName || 'Unknown Book',
+                    author: bookDetails?.author || 'Unknown Author',
+                    isbn: bookDetails?.isbn || 'N/A',
+                    genre: bookDetails?.genre || 'N/A',
+                    imageUrl: bookDetails?.imageUrl || null
+                };
+            });
             
             console.log("Issued books with full details:", borrowingsWithFullDetails);
             return borrowingsWithFullDetails;
@@ -344,6 +292,68 @@ const ContextProvider = ({ children }) => {
             console.error("Error fetching issued books:", error);
             throw error;
         }
+    }
+
+    // Helper function to fetch members by IDs in batches
+    const fetchMembersByIds = async (memberIds) => {
+        const memberDetailsMap = {};
+        const batchSize = 5; // Process 5 members at a time
+        
+        for (let i = 0; i < memberIds.length; i += batchSize) {
+            const batch = memberIds.slice(i, i + batchSize);
+            const batchPromises = batch.map(async (memberId) => {
+                try {
+                    const response = await axios.get(`http://localhost:8080/api/v1/members/${memberId}`);
+                    return { id: memberId, data: response.data };
+                } catch (error) {
+                    console.error(`Error fetching member ${memberId}:`, error);
+                    return { id: memberId, data: null };
+                }
+            });
+            
+            const batchResults = await Promise.all(batchPromises);
+            batchResults.forEach(result => {
+                memberDetailsMap[result.id] = result.data;
+            });
+            
+            // Small delay between batches to prevent overwhelming the server
+            if (i + batchSize < memberIds.length) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        
+        return memberDetailsMap;
+    }
+
+    // Helper function to fetch books by IDs in batches
+    const fetchBooksByIds = async (bookIds) => {
+        const bookDetailsMap = {};
+        const batchSize = 5; // Process 5 books at a time
+        
+        for (let i = 0; i < bookIds.length; i += batchSize) {
+            const batch = bookIds.slice(i, i + batchSize);
+            const batchPromises = batch.map(async (bookId) => {
+                try {
+                    const response = await axios.get(`http://localhost:8080/api/v1/books/${bookId}`);
+                    return { id: bookId, data: response.data };
+                } catch (error) {
+                    console.error(`Error fetching book ${bookId}:`, error);
+                    return { id: bookId, data: null };
+                }
+            });
+            
+            const batchResults = await Promise.all(batchPromises);
+            batchResults.forEach(result => {
+                bookDetailsMap[result.id] = result.data;
+            });
+            
+            // Small delay between batches to prevent overwhelming the server
+            if (i + batchSize < bookIds.length) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        
+        return bookDetailsMap;
     }
 
     const updateBorrowings = async (borrowing, id) => {
@@ -354,6 +364,32 @@ const ContextProvider = ({ children }) => {
             return response.data;
         } catch (error) {
             console.error("Error updating borrowings:", error);
+            throw error;
+        }
+    }
+
+    // Function to create a new borrowing (issue a book)
+    const createBorrowing = async (borrowingData) => {
+        try {
+            const url = "http://localhost:8080/api/v1/borrowings";
+            const response = await axios.post(url, borrowingData);
+            console.log("Borrowing created successfully:", response.data);
+            return response.data;
+        } catch (error) {
+            console.error("Error creating borrowing:", error);
+            throw error;
+        }
+    }
+
+    // Function to update book details (including availability status and quantity)
+    const updateBook = async (bookId, bookData) => {
+        try {
+            const url = `http://localhost:8080/api/v1/books/update/${bookId}`;
+            const response = await axios.put(url, bookData);
+            console.log("Book updated successfully:", response.data);
+            return response.data;
+        } catch (error) {
+            console.error("Error updating book:", error);
             throw error;
         }
     }
@@ -445,7 +481,10 @@ const ContextProvider = ({ children }) => {
             deleteMember,
             deleteBook,
             updateBorrowings,
+            createBorrowing,
+            updateBook,
             user,
+            isAuthenticated,
             login,
             logout,
             addLibrarian,

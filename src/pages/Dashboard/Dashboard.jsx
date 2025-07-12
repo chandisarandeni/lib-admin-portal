@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 
-import { Route, Routes, Link, NavLink } from "react-router-dom";
+import { Route, Routes, Link, NavLink, useNavigate } from "react-router-dom";
 import { LuLayoutDashboard } from "react-icons/lu";
 import { RiBookShelfFill } from "react-icons/ri";
 import { FaRegCalendarTimes, FaRegUser } from "react-icons/fa";
@@ -34,7 +34,13 @@ const Dashboard = () => {
     { name: "Profile", path: "/dashboard/profile", icon: <ImProfile /> }
   ];
 
-  const {user} = useContext(AppContext)
+  const {user, logout} = useContext(AppContext)
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -87,7 +93,7 @@ const Dashboard = () => {
           <div></div>
           <div className="flex items-center gap-5 text-black">
             <p>Hi! Admin</p>
-            <button className="border rounded-full text-sm px-4 py-1">
+            <button onClick={handleLogout} className="border rounded-full text-sm px-4 py-1">
               Logout
             </button>
           </div>
