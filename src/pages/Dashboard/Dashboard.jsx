@@ -84,10 +84,6 @@ const Dashboard = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
-         <p className="text-gray-700 text-sm">
-            Welcome back, <span className="font-semibold text-[#8E552C]">{user?.email || 'User'}</span>! 
-            {user?.email && <span className="text-gray-500 ml-2">Logged in successfully</span>}
-          </p>
         {/* Top Header for larger screens */}
         <div className="flex items-center justify-between px-4 md:px-8 border-b border-gray-300 py-3 bg-[#8E552C]">
           <div></div>
